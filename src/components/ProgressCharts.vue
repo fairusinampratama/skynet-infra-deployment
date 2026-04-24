@@ -124,26 +124,26 @@ const odcChartData = computed(() => {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="flex flex-col gap-6 h-full">
     <!-- ODP Chart -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-[400px]">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col flex-1 min-h-[300px]">
       <h3 class="font-semibold text-gray-800 mb-4">Grafik Pembangunan ODP</h3>
-      <div class="flex-grow relative w-full h-full">
+      <div class="flex-grow relative w-full">
         <div v-if="labels.length === 0" class="absolute inset-0 flex items-center justify-center text-gray-400">
           Belum ada data
         </div>
-        <Line v-else :data="odpChartData" :options="defaultOptions" />
+        <Line v-else :data="odpChartData" :options="defaultOptions" class="!h-full !w-full" />
       </div>
     </div>
 
     <!-- ODC Chart -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-[400px]">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col flex-1 min-h-[300px]">
       <h3 class="font-semibold text-gray-800 mb-4">Grafik Pembangunan ODC</h3>
-      <div class="flex-grow relative w-full h-full">
+      <div class="flex-grow relative w-full">
         <div v-if="labels.length === 0" class="absolute inset-0 flex items-center justify-center text-gray-400">
           Belum ada data
         </div>
-        <Line v-else :data="odcChartData" :options="defaultOptions" />
+        <Line v-else :data="odcChartData" :options="defaultOptions" class="!h-full !w-full" />
       </div>
     </div>
   </div>

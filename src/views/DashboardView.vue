@@ -34,9 +34,9 @@ const {
       />
     </section>
 
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-stretch">
       <!-- Left Column: Rekap Table -->
-      <div class="xl:col-span-1">
+      <div class="xl:col-span-1 h-full">
         <TeamRekapTable 
           :team-totals="teamTotals"
           :target-odp="TARGET_ODP"
@@ -45,7 +45,7 @@ const {
       </div>
 
       <!-- Right Column: Charts -->
-      <div class="xl:col-span-2">
+      <div class="xl:col-span-2 h-full">
         <ProgressCharts 
           :labels="chartData.labels"
           :odp-data="chartData.odpData"
