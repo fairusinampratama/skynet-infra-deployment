@@ -1,36 +1,5 @@
 <script setup>
-import { ref } from 'vue'
-import { Download, Upload, LayoutDashboard, FileSpreadsheet } from 'lucide-vue-next'
-import { useDashboard } from './composables/useDashboard'
-
-const {
-  importData,
-  exportData
-} = useDashboard()
-
-const fileInput = ref(null)
-
-const triggerImport = () => {
-  fileInput.value?.click()
-}
-
-const handleFileUpload = (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-
-  const reader = new FileReader()
-  reader.onload = async (e) => {
-    const success = await importData(e.target.result)
-    if (success) {
-      alert('Data berhasil diimpor!')
-    } else {
-      alert('Gagal mengimpor data. Format file tidak valid.')
-    }
-    // Reset file input
-    event.target.value = ''
-  }
-  reader.readAsText(file)
-}
+import { LayoutDashboard, FileSpreadsheet } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -46,33 +15,6 @@ const handleFileUpload = (event) => {
             <h1 class="font-bold text-lg md:text-xl tracking-tight text-gray-900">
               Pembangunan ODP & ODC Skynet
             </h1>
-          </div>
-          
-          <div class="flex items-center gap-3">
-            <input 
-              type="file" 
-              ref="fileInput" 
-              accept=".json" 
-              class="hidden" 
-              @change="handleFileUpload"
-            >
-            
-            <button 
-              @click="triggerImport"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors shadow-sm"
-              title="Note: Import format is JSON. Export generates XLSX."
-            >
-              <Upload :size="16" />
-              <span class="hidden sm:inline">Import Data</span>
-            </button>
-            
-            <button 
-              @click="exportData"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors shadow-sm"
-            >
-              <Download :size="16" />
-              <span class="hidden sm:inline">Export Excel</span>
-            </button>
           </div>
         </div>
       </div>
