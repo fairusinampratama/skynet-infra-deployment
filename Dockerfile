@@ -18,7 +18,7 @@ RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
 
 # Copy the Express backend
-COPY server/ ./server/
+COPY backend/ ./backend/
 
 # Ensure the database file can be created and persisted in a dedicated data directory
 # Coolify will mount a volume here instead of over the source code

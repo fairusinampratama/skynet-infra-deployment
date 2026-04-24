@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "node server/index.js",
+    "dev:server": "node backend/server.js",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node server/index.js"
+    "start": "node backend/server.js"
   },
   "dependencies": {
     "@vueuse/core": "^14.2.1",
