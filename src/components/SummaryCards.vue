@@ -6,7 +6,23 @@ defineProps({
     type: Number,
     required: true
   },
+  targetOdp: {
+    type: Number,
+    required: true
+  },
+  targetOdc: {
+    type: Number,
+    required: true
+  },
   installed: {
+    type: Number,
+    required: true
+  },
+  installedOdp: {
+    type: Number,
+    required: true
+  },
+  installedOdc: {
     type: Number,
     required: true
   },
@@ -28,9 +44,15 @@ defineProps({
       <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
         <Target :size="24" />
       </div>
-      <div>
+      <div class="w-full">
         <p class="text-sm font-medium text-gray-500">TARGET (ODP+ODC)</p>
-        <p class="text-2xl font-bold text-gray-900">{{ target }}</p>
+        <div class="flex flex-wrap items-end gap-2 mt-1">
+          <p class="text-2xl font-bold text-gray-900 leading-none">{{ target }}</p>
+          <div class="flex text-xs font-medium gap-1.5 pb-0.5">
+            <span class="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">ODP: {{ targetOdp }}</span>
+            <span class="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">ODC: {{ targetOdc }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -39,9 +61,15 @@ defineProps({
       <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
         <Activity :size="24" />
       </div>
-      <div>
+      <div class="w-full">
         <p class="text-sm font-medium text-gray-500">TOTAL TERPASANG</p>
-        <p class="text-2xl font-bold text-gray-900">{{ installed }}</p>
+        <div class="flex flex-wrap items-end gap-2 mt-1">
+          <p class="text-2xl font-bold text-gray-900 leading-none">{{ installed }}</p>
+          <div class="flex text-xs font-medium gap-1.5 pb-0.5">
+            <span class="bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700">ODP: {{ installedOdp }}</span>
+            <span class="bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-700">ODC: {{ installedOdc }}</span>
+          </div>
+        </div>
       </div>
     </div>
 

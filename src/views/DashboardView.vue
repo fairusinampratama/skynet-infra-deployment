@@ -8,6 +8,8 @@ const {
   TARGET_ODP,
   TARGET_ODC,
   TOTAL_TARGET,
+  totalOdp,
+  totalOdc,
   totalInstalled,
   progressPercent,
   remainingDays,
@@ -22,7 +24,11 @@ const {
     <section>
       <SummaryCards 
         :target="TOTAL_TARGET"
+        :target-odp="TARGET_ODP"
+        :target-odc="TARGET_ODC"
         :installed="totalInstalled"
+        :installed-odp="totalOdp"
+        :installed-odc="totalOdc"
         :progress="progressPercent"
         :days-remaining="remainingDays"
       />
