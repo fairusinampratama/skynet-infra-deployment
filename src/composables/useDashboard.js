@@ -69,10 +69,10 @@ export function useDashboard() {
 
   const teamTotals = computed(() => {
     const totals = [
-      { id: 1, name: 'Tim 1', odp: 0, odc: 0 },
-      { id: 2, name: 'Tim 2', odp: 0, odc: 0 },
-      { id: 3, name: 'Tim 3', odp: 0, odc: 0 },
-      { id: 4, name: 'Tim 4', odp: 0, odc: 0 }
+      { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 0, odc: 0 },
+      { id: 2, name: 'Tim 2', pic: 'Dappa', odp: 0, odc: 0 },
+      { id: 3, name: 'Tim 3', pic: 'Tyo', odp: 0, odc: 0 },
+      { id: 4, name: 'Tim 4', pic: 'Baim', odp: 0, odc: 0 }
     ]
     logs.value.forEach(log => {
       totals[0].odp += Number(log.tim1?.odp) || 0

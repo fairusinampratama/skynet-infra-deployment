@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   teamTotals: {
     type: Array,
     required: true
@@ -18,62 +20,92 @@ const formatPercent = (value, target) => {
   if (target === 0) return '0%'
   return `${((value / target) * 100).toFixed(1)}%`
 }
+
+const grandTotalOdp = computed(() => {
+  return props.teamTotals.reduce((s, t) => s + t.odp, 0)
+})
+
+const grandTotalOdc = computed(() => {
+  return props.teamTotals.reduce((s, t) => s + t.odc, 0)
+})
 </script>
 
 <template>
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col">
+    <!-- Header -->
     <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex-none">
       <h3 class="font-semibold text-gray-800">Rekap ODP & ODC Per Tim</h3>
     </div>
     
-    <div class="overflow-x-auto flex-grow">
-      <table class="w-full text-left text-sm text-gray-600">
-        <thead class="text-xs text-gray-500 uppercase bg-gray-50/50 border-b border-gray-100">
-          <tr>
-            <th scope="col" class="px-6 py-4 font-medium">Tim</th>
-            <th scope="col" class="px-6 py-4 font-medium text-right">Total ODP</th>
-            <th scope="col" class="px-6 py-4 font-medium text-right">% ODP (dari {{ targetOdp }})</th>
-            <th scope="col" class="px-6 py-4 font-medium text-right">Total ODC</th>
-            <th scope="col" class="px-6 py-4 font-medium text-right">% ODC (dari {{ targetOdc }})</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-50">
-          <tr 
-            v-for="team in teamTotals" 
-            :key="team.id"
-            class="hover:bg-gray-50/50 transition-colors"
-          >
-            <td class="px-6 py-4 font-medium text-gray-800">{{ team.name }}</td>
-            <td class="px-6 py-4 text-right font-medium text-blue-600">{{ team.odp }}</td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <span class="text-gray-500 w-10">{{ formatPercent(team.odp, targetOdp) }}</span>
-                <div class="w-16 bg-gray-200 rounded-full h-1.5">
-                  <div class="bg-blue-500 h-1.5 rounded-full" :style="{ width: formatPercent(team.odp, targetOdp) }"></div>
-                </div>
+    <!-- Vertical Team Cards -->
+    <div class="flex-grow overflow-y-auto divide-y divide-gray-100">
+      <div 
+        v-for="team in teamTotals" 
+        :key="team.id"
+        class="p-5 hover:bg-gray-50/30 transition-colors"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="font-bold text-gray-800">
+            {{ team.name }}
+            <span class="text-sm font-normal text-gray-500 ml-1">({{ team.pic }})</span>
+          </h4>
+        </div>
+        
+        <div class="space-y-4">
+          <!-- ODP -->
+          <div>
+            <div class="flex justify-between text-sm mb-1.5">
+              <span class="text-gray-600 font-medium">ODP</span>
+              <div class="text-right">
+                <span class="font-bold text-blue-600">{{ team.odp }}</span>
+                <span class="text-gray-400 font-normal text-xs ml-1.5">({{ formatPercent(team.odp, targetOdp) }})</span>
               </div>
-            </td>
-            <td class="px-6 py-4 text-right font-medium text-violet-600">{{ team.odc }}</td>
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <span class="text-gray-500 w-10">{{ formatPercent(team.odc, targetOdc) }}</span>
-                <div class="w-16 bg-gray-200 rounded-full h-1.5">
-                  <div class="bg-violet-500 h-1.5 rounded-full" :style="{ width: formatPercent(team.odc, targetOdc) }"></div>
-                </div>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+              <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" :style="{ width: formatPercent(team.odp, targetOdp) }"></div>
+            </div>
+          </div>
+          
+          <!-- ODC -->
+          <div>
+            <div class="flex justify-between text-sm mb-1.5">
+              <span class="text-gray-600 font-medium">ODC</span>
+              <div class="text-right">
+                <span class="font-bold text-violet-600">{{ team.odc }}</span>
+                <span class="text-gray-400 font-normal text-xs ml-1.5">({{ formatPercent(team.odc, targetOdc) }})</span>
               </div>
-            </td>
-          </tr>
-        </tbody>
-        <tfoot class="bg-gray-50 font-semibold text-gray-900 border-t border-gray-200">
-          <tr>
-            <td class="px-6 py-4">TOTAL</td>
-            <td class="px-6 py-4 text-right text-blue-700">{{ teamTotals.reduce((s,t) => s + t.odp, 0) }}</td>
-            <td class="px-6 py-4 text-right text-gray-600">{{ formatPercent(teamTotals.reduce((s,t) => s + t.odp, 0), targetOdp) }}</td>
-            <td class="px-6 py-4 text-right text-violet-700">{{ teamTotals.reduce((s,t) => s + t.odc, 0) }}</td>
-            <td class="px-6 py-4 text-right text-gray-600">{{ formatPercent(teamTotals.reduce((s,t) => s + t.odc, 0), targetOdc) }}</td>
-          </tr>
-        </tfoot>
-      </table>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+              <div class="bg-violet-500 h-2 rounded-full transition-all duration-500" :style="{ width: formatPercent(team.odc, targetOdc) }"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grand Total Footer -->
+    <div class="bg-gray-50 px-6 py-5 border-t border-gray-200 mt-auto">
+      <div class="font-bold text-gray-900 mb-4">TOTAL KESELURUHAN</div>
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-600">Total ODP</span>
+            <span class="font-bold text-blue-700">{{ grandTotalOdp }} <span class="text-gray-500 text-xs font-normal">({{ formatPercent(grandTotalOdp, targetOdp) }})</span></span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" :style="{ width: formatPercent(grandTotalOdp, targetOdp) }"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-600">Total ODC</span>
+            <span class="font-bold text-violet-700">{{ grandTotalOdc }} <span class="text-gray-500 text-xs font-normal">({{ formatPercent(grandTotalOdc, targetOdc) }})</span></span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-violet-600 h-2 rounded-full transition-all duration-500" :style="{ width: formatPercent(grandTotalOdc, targetOdc) }"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
