@@ -111,6 +111,9 @@ export function useDashboard() {
     return Math.max(TOTAL_DAYS - currentDay, 0)
   })
 
+  const remainingOdp = computed(() => Math.max(TARGET_ODP - totalOdp.value, 0))
+  const remainingOdc = computed(() => Math.max(TARGET_ODC - totalOdc.value, 0))
+
   const chartData = computed(() => {
     const labels = logs.value.map(log => log.date)
     const odpData = []
@@ -171,6 +174,8 @@ export function useDashboard() {
     totalInstalled,
     progressPercent,
     remainingDays,
+    remainingOdp,
+    remainingOdc,
     chartData
   }
 }
