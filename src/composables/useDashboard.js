@@ -1,5 +1,4 @@
 import { computed, ref, onMounted } from 'vue'
-import * as xlsx from 'xlsx'
 
 const logs = ref([])
 
