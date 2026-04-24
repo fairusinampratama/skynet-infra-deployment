@@ -105,7 +105,10 @@ export function useDashboard() {
   })
 
   const remainingDays = computed(() => {
-    return Math.max(TOTAL_DAYS - logs.value.length, 0)
+    // logs.value.length includes Day 0.
+    // The current actual progress day is logs.value.length - 1
+    const currentDay = Math.max(logs.value.length - 1, 0)
+    return Math.max(TOTAL_DAYS - currentDay, 0)
   })
 
   const chartData = computed(() => {
