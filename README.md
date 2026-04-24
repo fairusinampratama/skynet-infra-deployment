@@ -13,6 +13,7 @@ This application was specifically built to replace and mirror the data structure
 - 📈 **Dynamic Calculations**: Automatically computes daily totals, cumulative sums (Akumulasi), percentage progress against global targets, and remaining sprint days.
 - 📥 **Excel Export (SheetJS)**: One-click export generates a multi-sheet `.xlsx` file perfectly formatted to match the original reporting standards.
 - 🗄️ **Centralized Database**: Utilizes an Express.js + SQLite backend to ensure data is permanently stored, persistent across all devices, and safe from browser cache clears.
+- 🔒 **Admin PIN Protection**: The data entry page is protected by a 4-digit admin PIN to prevent unauthorized modifications and ensure data integrity.
 
 ## Tech Stack
 
@@ -52,12 +53,22 @@ npm start
 ```
 *Note: The SQLite database (`database.sqlite`) will be automatically created in the `server/` directory.*
 
+### 2. Configure Environment (Optional)
+Copy the example environment file and customize:
+```bash
+cp .env.example .env
+```
+Key configuration:
+- `ADMIN_PIN`: Set your desired 4-digit PIN for CRUD access (default: `1234`)
+
 ### 3. Start the Frontend Vite Server
 In a second terminal, start the Vue development server:
 ```bash
 npm run dev
 ```
 The frontend will run on `http://localhost:5173` and automatically proxy API requests to the backend.
+
+**Note**: The default admin PIN is `1234`. You can change it by setting the `ADMIN_PIN` environment variable.
 
 ---
 
@@ -75,6 +86,7 @@ This application is fully containerized and optimized for deployment via [Coolif
 3. **Configure Settings**:
    - **Build Pack**: Coolify will auto-detect the `Dockerfile`.
    - **Port**: Ensure the internal port is set to `3000`.
+   - **Environment Variables**: Set `ADMIN_PIN` to your desired 4-digit PIN (e.g., `ADMIN_PIN=9876`).
 4. **Configure Persistent Storage (CRITICAL)**:
    - To ensure your SQLite database isn't erased during updates or container restarts, you must mount a persistent volume.
    - Go to the **Storages** (or Volumes) tab for your application in Coolify.

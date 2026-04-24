@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import 'dotenv/config'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -11,6 +12,7 @@ const __dirname = path.dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3000
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'database.sqlite')
+const ADMIN_PIN = process.env.ADMIN_PIN || '1234'
 
 app.use(cors())
 app.use(express.json())
@@ -33,13 +35,30 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
   }
 })
 
+// ============================================
+// API Routes - Must be defined BEFORE static files
+// ============================================
+
+// PIN verification endpoint
+app.post('/api/verify-pin', (req, res) => {
+  const { pin } = req.body
+  if (!pin) {
+    return res.status(400).json({ success: false, message: 'PIN diperlukan' })
+  }
+  
+  if (pin === ADMIN_PIN) {
+    res.json({ success: true, message: 'PIN diverifikasi' })
+  } else {
+    res.status(401).json({ success: false, message: 'PIN salah' })
+  }
+})
+
 // GET /api/logs - Fetch all logs
 app.get('/api/logs', (req, res) => {
   db.all('SELECT * FROM daily_logs ORDER BY date ASC', [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message })
     }
-    // Parse the JSON data string back into an object
     const logs = rows.map(row => JSON.parse(row.data))
     res.json(logs)
   })
@@ -52,7 +71,6 @@ app.post('/api/logs', (req, res) => {
     return res.status(400).json({ error: 'Missing id or date' })
   }
 
-  // Use INSERT OR REPLACE because we enforce exactly one record per date
   const stmt = db.prepare('INSERT OR REPLACE INTO daily_logs (id, date, data) VALUES (?, ?, ?)')
   stmt.run([log.id, log.date, JSON.stringify(log)], function (err) {
     if (err) {
@@ -74,16 +92,24 @@ app.delete('/api/logs/:id', (req, res) => {
   })
 })
 
-// --- Serve Static Frontend (for Docker / Production) ---
-// In production (when deployed to Coolify), the built Vue files will be in the 'dist' directory.
-// We tell Express to serve these static files if they exist.
+// ============================================
+// Static File Serving (for Production)
+// ============================================
 const distPath = path.join(__dirname, '../dist')
 if (fs.existsSync(distPath)) {
   console.log(`Serving static files from ${distPath}`)
+  
+  // Serve static files
   app.use(express.static(distPath))
-  // For Vue Router (SPA routing), fallback to index.html
-  app.use((req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'))
+  
+  // SPA fallback - serve index.html for any unmatched routes
+  // Using a middleware approach instead of wildcard route for Express 5 compatibility
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      res.sendFile(path.join(distPath, 'index.html'))
+    } else {
+      next()
+    }
   })
 } else {
   console.log('Running in dev mode. Use Vite (npm run dev) to serve the frontend.')

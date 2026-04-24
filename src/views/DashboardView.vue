@@ -13,6 +13,8 @@ const {
   totalInstalled,
   progressPercent,
   remainingDays,
+  remainingOdp,
+  remainingOdc,
   chartData,
   teamTotals
 } = useDashboard()
@@ -31,6 +33,8 @@ const {
         :installed-odc="totalOdc"
         :progress="progressPercent"
         :days-remaining="remainingDays"
+        :remaining-odp="remainingOdp"
+        :remaining-odc="remainingOdc"
       />
     </section>
 

@@ -1,5 +1,5 @@
 <script setup>
-import { Target, Activity, Percent, CalendarClock } from "lucide-vue-next";
+import { Target, Activity, Percent, CalendarClock, PackageMinus } from "lucide-vue-next";
 
 defineProps({
   target: {
@@ -34,11 +34,19 @@ defineProps({
     type: Number,
     required: true,
   },
+  remainingOdp: {
+    type: Number,
+    required: true,
+  },
+  remainingOdc: {
+    type: Number,
+    required: true,
+  },
 });
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
     <!-- Target Card -->
     <div
       class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1"
@@ -118,6 +126,25 @@ defineProps({
       <div>
         <p class="text-sm font-medium text-gray-500">SISA HARI</p>
         <p class="text-2xl font-bold text-gray-900">{{ daysRemaining }} Hari</p>
+      </div>
+    </div>
+
+    <!-- Sisa Pemasangan Card -->
+    <div
+      class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-start gap-4 transition-transform hover:-translate-y-1"
+    >
+      <div class="p-3 bg-rose-50 text-rose-600 rounded-lg">
+        <PackageMinus :size="24" />
+      </div>
+      <div class="w-full">
+        <p class="text-sm font-medium text-gray-500">SISA PEMASANGAN</p>
+        <div class="flex flex-col gap-1 mt-1">
+          <p class="text-2xl font-bold text-gray-900 leading-none">{{ remainingOdp + remainingOdc }}</p>
+          <div class="flex text-xs font-medium gap-1.5">
+            <span class="bg-rose-50 px-1.5 py-0.5 rounded text-rose-700">ODP: {{ remainingOdp }}</span>
+            <span class="bg-rose-50 px-1.5 py-0.5 rounded text-rose-700">ODC: {{ remainingOdc }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
