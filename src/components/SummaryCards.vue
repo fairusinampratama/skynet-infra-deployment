@@ -1,5 +1,5 @@
 <script setup>
-import { Target, Activity, Percent, CalendarClock, PackageMinus } from "lucide-vue-next";
+import { Target, Activity, Percent, CalendarClock, Skull } from "lucide-vue-next";
 
 defineProps({
   target: {
@@ -134,7 +134,7 @@ defineProps({
       class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-start gap-4 transition-transform hover:-translate-y-1"
     >
       <div class="p-3 bg-rose-50 text-rose-600 rounded-lg">
-        <PackageMinus :size="24" />
+        <Skull :size="24" />
       </div>
       <div class="w-full">
         <p class="text-sm font-medium text-gray-500">SISA PEMASANGAN</p>

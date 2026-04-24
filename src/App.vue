@@ -13,7 +13,7 @@ import { LayoutDashboard, FileSpreadsheet } from 'lucide-vue-next'
               <span class="text-white font-bold text-sm">RA</span>
             </div>
             <h1 class="font-bold text-lg md:text-xl tracking-tight text-gray-900">
-              Pembangunan ODP & ODC Skynet
+              Pembangunan ODP & ODC SkyNet
             </h1>
           </div>
         </div>
