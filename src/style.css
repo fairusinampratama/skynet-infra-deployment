@@ -1,12 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #aa3bff;
-  --color-bg: #f9fafb;
-  --color-text: #111827;
+  --color-primary: #2563eb;
+  --color-bg: #eef4ff;
+  --color-text: #0f172a;
   --color-card: #ffffff;
 }
 
+html {
+  background:
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 36%),
+    linear-gradient(180deg, #f8fbff 0%, #edf4ff 45%, #f8fafc 100%);
+}
+
 body {
-  @apply bg-gray-50 text-gray-900;
+  @apply text-slate-900;
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(239, 246, 255, 0.88)),
+    linear-gradient(180deg, #f8fbff 0%, #eef4ff 48%, #f8fafc 100%);
+}
+
+#app {
+  min-height: 100vh;
 }

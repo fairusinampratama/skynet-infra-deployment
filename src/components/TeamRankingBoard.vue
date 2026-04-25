@@ -1,6 +1,5 @@
 <script setup>
 import { computed } from 'vue'
-import { Award, Crown, Medal, Skull, Sparkles, TrendingDown, TrendingUp, Trophy } from 'lucide-vue-next'
 
 const props = defineProps({
   teamRankings: {
@@ -9,583 +8,704 @@ const props = defineProps({
   }
 })
 
-const topThree = computed(() => props.teamRankings.slice(0, 3))
-const otherTeams = computed(() => props.teamRankings.slice(3))
-const lowestRank = computed(() => props.teamRankings.length)
+const rankMap = computed(() => {
+  const map = new Map()
+  props.teamRankings.forEach((team) => map.set(team.rank, team))
+  return map
+})
 
-const rankBadgeClasses = {
-  1: 'bg-amber-100 text-amber-700 ring-amber-200',
-  2: 'bg-slate-100 text-slate-700 ring-slate-200',
-  3: 'bg-orange-100 text-orange-700 ring-orange-200'
-}
+const secondPlace = computed(() => rankMap.value.get(2) ?? null)
+const firstPlace = computed(() => rankMap.value.get(1) ?? null)
+const thirdPlace = computed(() => rankMap.value.get(3) ?? null)
+const fourthPlace = computed(() => rankMap.value.get(4) ?? null)
 
-const cardClasses = {
-  1: 'border-amber-200 bg-gradient-to-br from-amber-50 to-white',
-  2: 'border-slate-200 bg-gradient-to-br from-slate-50 to-white',
-  3: 'border-orange-200 bg-gradient-to-br from-orange-50 to-white'
-}
-
-const getRankBadgeClass = (rank) => {
-  return rankBadgeClasses[rank] ?? 'bg-blue-100 text-blue-700 ring-blue-200'
-}
-
-const getCardClass = (rank) => {
-  return cardClasses[rank] ?? 'border-blue-100 bg-white'
-}
-
-const getPodiumColumnClass = (rank) => {
-  if (rank === 1) return 'md:order-2'
-  if (rank === 2) return 'md:order-1'
-  return 'md:order-3'
-}
-
-const getPodiumHeightClass = (rank) => {
-  if (rank === 1) return 'min-h-[300px]'
-  if (rank === 2) return 'min-h-[280px]'
-  return 'min-h-[260px]'
-}
-
-const getPodiumGlowClass = (rank) => {
-  if (rank === 1) return 'from-amber-300/30 via-yellow-200/20 to-white'
-  if (rank === 2) return 'from-slate-300/25 via-slate-200/20 to-white'
-  return 'from-orange-300/25 via-amber-100/20 to-white'
-}
-
-const getRankIcon = (rank) => {
-  if (rank === 1) return Trophy
-  if (rank === 2) return Medal
-  return Award
-}
-
-const getRankLabel = (rank) => {
-  if (rank === 1) return 'Juara 1'
-  if (rank === 2) return 'Juara 2'
-  return 'Juara 3'
-}
-
-const getPedestalClass = (rank) => {
-  if (rank === 1) return 'h-28 bg-gradient-to-b from-amber-300 to-amber-500'
-  if (rank === 2) return 'h-20 bg-gradient-to-b from-slate-300 to-slate-500'
-  return 'h-14 bg-gradient-to-b from-orange-300 to-orange-500'
-}
-
-const getAccentTextClass = (rank) => {
-  if (rank === 1) return 'text-amber-700'
-  if (rank === 2) return 'text-slate-700'
-  return 'text-orange-700'
-}
-
-const getAccentChipClass = (rank) => {
-  if (rank === 1) return 'bg-amber-50/90 text-amber-800 ring-amber-200'
-  if (rank === 2) return 'bg-slate-50/90 text-slate-800 ring-slate-200'
-  return 'bg-orange-50/90 text-orange-800 ring-orange-200'
-}
-
-const getAccentStatClass = (rank) => {
-  if (rank === 1) return 'from-amber-50 to-yellow-50 border-amber-100'
-  if (rank === 2) return 'from-slate-50 to-gray-50 border-slate-100'
-  return 'from-orange-50 to-amber-50 border-orange-100'
-}
-
-const isLowestRank = (rank) => rank === lowestRank.value
-
-const getTrendState = (team) => {
-  if (team.trendDelta > 0 || team.rankChange > 0) return 'up'
-  if (team.trendDelta < 0 || team.rankChange < 0) return 'down'
-  return 'flat'
-}
-
-const getTrendLabel = (team) => {
-  if (team.rank === 1 && team.leadOverNext > 0) return `Unggul ${team.leadOverNext} poin dari posisi 2`
-  if (team.gapToAbove > 0) return `Selisih ${team.gapToAbove} poin dari atas`
-  return 'Puncak klasemen sementara'
-}
-
-const getTrendChipClass = (team) => {
-  const state = getTrendState(team)
-  if (state === 'up') return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-  if (state === 'down') return 'bg-rose-50 text-rose-700 ring-rose-200'
-  return 'bg-slate-100 text-slate-600 ring-slate-200'
-}
-
-const getTrendIcon = (team) => {
-  const state = getTrendState(team)
-  if (state === 'up') return TrendingUp
-  if (state === 'down') return TrendingDown
-  return Sparkles
-}
+const leaderScore = computed(() => Math.max(firstPlace.value?.totalInstalled ?? 1, 1))
+const progressWidth = (value) => `${Math.max((value / leaderScore.value) * 100, 12)}%`
+const barHeight = (value, step, rank) => `${26 + step * 18 + Math.max(value, 1) * (rank === 1 ? 2.05 : 1.65)}px`
 </script>
 
 <template>
-  <section class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-    <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-cyan-500 text-white">
-      <div class="flex items-center justify-between gap-4">
-        <div>
-          <p class="text-xs font-semibold tracking-[0.2em] uppercase text-blue-100">Halaman Depan</p>
-          <h2 class="text-xl md:text-2xl font-bold mt-1">Ranking Tim Instalasi</h2>
-        </div>
-        <div class="text-right">
-          <p class="text-xs text-blue-100">Peringkat dihitung dari total ODP + ODC</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="px-4 pt-4 md:px-6 md:pt-6">
-      <div class="rounded-[28px] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.14),_transparent_55%),linear-gradient(180deg,_#eff6ff_0%,_#ffffff_100%)] border border-blue-100 p-4 md:p-6 overflow-hidden">
-        <div class="flex items-center justify-between gap-4 mb-6">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Top 3</p>
-            <h3 class="text-lg md:text-xl font-bold text-slate-900 mt-1">Podium Performa Teratas</h3>
-          </div>
-          <p class="text-sm text-slate-500">Ranking tertinggi tampil paling menonjol di depan.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div
-            v-for="team in topThree"
-            :key="`podium-${team.id}`"
-            class="podium-slot flex flex-col justify-end"
-            :class="getPodiumColumnClass(team.rank)"
-            :style="{ animationDelay: `${team.rank * 140}ms` }"
-          >
-            <div v-if="team.rank === 1" class="crown-wrap flex justify-center">
-              <div class="crown-badge">
-                <div class="crown-badge__sheen" />
-                <div class="crown-badge__rim" />
-                <Crown :size="58" stroke-width="2.6" />
-              </div>
-            </div>
-
-            <article
-              class="podium-card relative overflow-hidden rounded-[24px] border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              :class="[getCardClass(team.rank), getPodiumHeightClass(team.rank), { 'podium-card-top': team.rank === 1 }]"
-            >
-              <div v-if="team.rank === 1" class="spotlight-beam" />
-              <div v-if="team.rank === 1" class="confetti confetti-left" />
-              <div v-if="team.rank === 1" class="confetti confetti-right" />
-              <div
-                class="absolute inset-0 bg-gradient-to-br opacity-80 pointer-events-none"
-                :class="getPodiumGlowClass(team.rank)"
-              />
-              <div class="relative h-full flex flex-col">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <div
-                      class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] shadow-sm backdrop-blur-sm ring-1"
-                      :class="getAccentChipClass(team.rank)"
-                    >
-                      <component :is="getRankIcon(team.rank)" :size="14" class="podium-icon" />
-                      <span>{{ getRankLabel(team.rank) }}</span>
-                    </div>
-                    <p class="text-sm font-semibold text-gray-500 mt-3">{{ team.name }}</p>
-                    <h4 class="text-2xl font-black text-gray-900 mt-1">{{ team.pic }}</h4>
-                  </div>
-                  <div
-                    class="rank-badge w-12 h-12 rounded-full ring-1 flex items-center justify-center text-sm font-bold"
-                    :class="[getRankBadgeClass(team.rank), { 'rank-badge-top': team.rank === 1 }]"
-                  >
-                    #{{ team.rank }}
-                  </div>
-                </div>
-
-                <div class="mt-4 flex flex-wrap gap-2">
-                  <div
-                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ring-1"
-                    :class="getTrendChipClass(team)"
-                  >
-                    <component :is="getTrendIcon(team)" :size="14" />
-                    <span>
-                      {{ team.trendDelta === 0 ? 'Stabil' : `${team.trendDelta > 0 ? '+' : ''}${team.trendDelta} Hari Ini` }}
-                    </span>
-                  </div>
-                  <div
-                    v-for="badge in team.badges"
-                    :key="badge"
-                    class="inline-flex items-center rounded-full bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-700 ring-1 ring-white/70"
-                  >
-                    {{ badge }}
-                  </div>
-                </div>
-
-                <div class="mt-8">
-                  <p class="text-sm text-gray-500">Total Instalasi</p>
-                  <p class="text-5xl font-black mt-2 leading-none" :class="getAccentTextClass(team.rank)">
-                    {{ team.totalInstalled }}
-                  </p>
-                  <p class="mt-2 text-sm font-medium text-slate-600">{{ getTrendLabel(team) }}</p>
-                </div>
-
-                <div class="mt-auto pt-6">
-                  <div class="h-3 rounded-full bg-white/70 overflow-hidden">
-                    <div
-                      class="progress-bar h-full rounded-full"
-                      :class="team.rank === 1 ? 'bg-amber-400' : team.rank === 2 ? 'bg-slate-400' : 'bg-orange-400'"
-                      :style="{ width: `${Math.min((team.totalInstalled / Math.max(topThree[0]?.totalInstalled || 1, 1)) * 100, 100)}%` }"
-                    />
-                  </div>
-                  <div class="mt-4 grid grid-cols-2 gap-3">
-                    <div
-                      class="rounded-xl border bg-gradient-to-br px-4 py-3 backdrop-blur-sm"
-                      :class="getAccentStatClass(team.rank)"
-                    >
-                      <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">ODP</p>
-                      <p class="text-lg font-bold text-blue-900 mt-1">{{ team.odp }}</p>
-                    </div>
-                    <div
-                      class="rounded-xl border bg-gradient-to-br px-4 py-3 backdrop-blur-sm"
-                      :class="getAccentStatClass(team.rank)"
-                    >
-                      <p class="text-xs font-semibold uppercase tracking-wide text-violet-600">ODC</p>
-                      <p class="text-lg font-bold text-violet-900 mt-1">{{ team.odc }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <div
-              class="podium-base relative mx-3 rounded-b-[22px] rounded-t-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
-              :class="getPedestalClass(team.rank)"
-            >
-              <div class="absolute inset-x-4 top-0 h-px bg-white/60" />
-              <div class="absolute inset-x-0 bottom-3 flex justify-center">
-                <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white/90 ring-1 ring-white/20">
-                  {{ getRankLabel(team.rank) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="otherTeams.length" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 p-4 md:p-6">
-      <article
-        v-for="team in otherTeams"
-        :key="team.id"
-        class="ranking-card rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-        :class="[getCardClass(team.rank), { 'ranking-card-lowest': isLowestRank(team.rank) }]"
-        :style="{ animationDelay: `${team.rank * 120}ms` }"
-      >
-        <div v-if="isLowestRank(team.rank)" class="lowest-rank-mark">
-          <Skull :size="28" stroke-width="2.4" class="lowest-rank-skull" />
-          <span>Posisi Terbawah</span>
-        </div>
-
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-sm font-semibold text-gray-500">{{ team.name }}</p>
-            <h3 class="text-xl font-bold text-gray-900 mt-1">{{ team.pic }}</h3>
-          </div>
-          <div
-            class="rank-badge w-11 h-11 rounded-full ring-1 flex items-center justify-center text-sm font-bold"
-            :class="[getRankBadgeClass(team.rank), { 'rank-badge-top': team.rank === 1 }]"
-          >
-            #{{ team.rank }}
-          </div>
-        </div>
-
-        <div class="mt-4 flex flex-wrap gap-2">
-          <div
-            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ring-1"
-            :class="getTrendChipClass(team)"
-          >
-            <component :is="getTrendIcon(team)" :size="14" />
-            <span>
-              {{ team.trendDelta === 0 ? 'Stabil' : `${team.trendDelta > 0 ? '+' : ''}${team.trendDelta} Hari Ini` }}
+  <div class="rank-showcase">
+    <div class="podium-grid">
+      <article v-if="secondPlace" class="podium-card podium-card--silver">
+        <div class="podium-card__shine" />
+        <div class="podium-head">
+          <div class="medal-ribbon medal-ribbon--silver">
+            <span class="medal-ribbon__icon">
+              <svg viewBox="0 0 64 64" class="trophy-mark trophy-mark--silver" aria-hidden="true">
+                <path d="M20 10h24v8c0 7.7-5.2 14.2-12 16-6.8-1.8-12-8.3-12-16z" />
+                <path d="M17 14H8c0 9.2 5.5 15 13 16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <path d="M47 14h9c0 9.2-5.5 15-13 16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <path d="M26 36h12v6H26z" />
+                <path d="M22 44h20v6H22z" />
+              </svg>
             </span>
+            <span>Juara 2</span>
           </div>
-          <div
-            v-for="badge in team.badges"
-            :key="badge"
-            class="inline-flex items-center rounded-full bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-700 ring-1 ring-slate-200"
-          >
-            {{ badge }}
+          <div class="rank-bubble rank-bubble--silver">#2</div>
+        </div>
+
+        <div class="podium-body">
+          <p class="team-label">{{ secondPlace.name }}</p>
+          <h3 class="team-name">{{ secondPlace.pic }}</h3>
+
+          <div class="stat-layout">
+            <div>
+              <p class="metric-label">Total Instalasi</p>
+              <p class="metric-value metric-value--silver">{{ secondPlace.totalInstalled }}</p>
+            </div>
+            <div class="chart-bars chart-bars--silver">
+              <span v-for="step in 4" :key="`silver-${step}`" class="chart-bars__bar chart-bars__bar--silver" :style="{ height: barHeight(secondPlace.totalInstalled, step, 2) }" />
+            </div>
           </div>
-          <div
-            v-if="isLowestRank(team.rank)"
-            class="inline-flex items-center rounded-full bg-rose-950/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-rose-100 ring-1 ring-rose-400/40"
-          >
-            Perlu Dikejar
+
+          <div class="progress-rail">
+            <div class="progress-fill progress-fill--silver" :style="{ width: progressWidth(secondPlace.totalInstalled) }" />
+          </div>
+
+          <div class="split-stats">
+            <div class="split-stats__item">
+              <p class="split-stats__label split-stats__label--odp">ODP</p>
+              <p class="split-stats__value">{{ secondPlace.odp }}</p>
+            </div>
+            <div class="split-stats__item">
+              <p class="split-stats__label split-stats__label--odc">ODC</p>
+              <p class="split-stats__value">{{ secondPlace.odc }}</p>
+            </div>
           </div>
         </div>
 
-        <div class="mt-6">
-          <p class="text-sm text-gray-500">Total Instalasi</p>
-          <p class="text-3xl font-extrabold text-gray-900 mt-1">{{ team.totalInstalled }}</p>
-          <p class="mt-2 text-sm font-medium text-slate-600">{{ getTrendLabel(team) }}</p>
+        <div class="podium-footer podium-footer--silver">Juara 2</div>
+      </article>
+
+      <article v-if="firstPlace" class="podium-card podium-card--gold podium-card--main">
+        <div class="podium-card__shine" />
+        <div class="podium-head">
+          <div class="medal-ribbon medal-ribbon--gold">
+            <span class="medal-ribbon__icon">
+              <svg viewBox="0 0 64 64" class="trophy-mark trophy-mark--gold" aria-hidden="true">
+                <path d="M20 10h24v8c0 7.7-5.2 14.2-12 16-6.8-1.8-12-8.3-12-16z" />
+                <path d="M17 14H8c0 9.2 5.5 15 13 16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <path d="M47 14h9c0 9.2-5.5 15-13 16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <path d="M26 36h12v6H26z" />
+                <path d="M22 44h20v6H22z" />
+              </svg>
+            </span>
+            <span>Juara 1</span>
+          </div>
+          <div class="rank-bubble rank-bubble--gold">#1</div>
         </div>
 
-        <div class="mt-5 grid grid-cols-2 gap-3">
-          <div class="rounded-xl bg-blue-50 px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">ODP</p>
-            <p class="text-lg font-bold text-blue-900 mt-1">{{ team.odp }}</p>
+        <div class="podium-body">
+          <p class="team-label">{{ firstPlace.name }}</p>
+          <h3 class="team-name team-name--main">{{ firstPlace.pic }}</h3>
+
+          <div class="stat-layout stat-layout--main">
+            <div>
+              <p class="metric-label">Total Instalasi</p>
+              <p class="metric-value metric-value--gold">{{ firstPlace.totalInstalled }}</p>
+            </div>
+            <div class="chart-bars chart-bars--gold">
+              <span v-for="step in 4" :key="`gold-${step}`" class="chart-bars__bar chart-bars__bar--gold" :style="{ height: barHeight(firstPlace.totalInstalled, step, 1) }" />
+            </div>
           </div>
-          <div class="rounded-xl bg-violet-50 px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-violet-600">ODC</p>
-            <p class="text-lg font-bold text-violet-900 mt-1">{{ team.odc }}</p>
+
+          <div class="progress-rail">
+            <div class="progress-fill progress-fill--gold" :style="{ width: progressWidth(firstPlace.totalInstalled) }" />
+          </div>
+
+          <div class="split-stats">
+            <div class="split-stats__item">
+              <p class="split-stats__label split-stats__label--odp">ODP</p>
+              <p class="split-stats__value">{{ firstPlace.odp }}</p>
+            </div>
+            <div class="split-stats__item">
+              <p class="split-stats__label split-stats__label--odc">ODC</p>
+              <p class="split-stats__value">{{ firstPlace.odc }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="podium-footer podium-footer--gold">
+          <span class="podium-footer__star">&#9733;</span>
+          <span>Juara 1</span>
+          <span class="podium-footer__star">&#9733;</span>
+        </div>
+      </article>
+
+      <article v-if="thirdPlace" class="podium-card podium-card--bronze">
+        <div class="podium-card__shine" />
+        <div class="podium-head">
+          <div class="medal-ribbon medal-ribbon--bronze">
+            <span class="medal-ribbon__icon">
+              <svg viewBox="0 0 64 64" class="trophy-mark trophy-mark--bronze" aria-hidden="true">
+                <path d="M20 10h24v8c0 7.7-5.2 14.2-12 16-6.8-1.8-12-8.3-12-16z" />
+                <path d="M17 14H8c0 9.2 5.5 15 13 16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <path d="M47 14h9c0 9.2-5.5 15-13 16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <path d="M26 36h12v6H26z" />
+                <path d="M22 44h20v6H22z" />
+              </svg>
+            </span>
+            <span>Juara 3</span>
+          </div>
+          <div class="rank-bubble rank-bubble--bronze">#3</div>
+        </div>
+
+        <div class="podium-body">
+          <p class="team-label">{{ thirdPlace.name }}</p>
+          <h3 class="team-name">{{ thirdPlace.pic }}</h3>
+
+          <div class="stat-layout">
+            <div>
+              <p class="metric-label">Total Instalasi</p>
+              <p class="metric-value metric-value--bronze">{{ thirdPlace.totalInstalled }}</p>
+            </div>
+            <div class="chart-bars chart-bars--bronze">
+              <span v-for="step in 4" :key="`bronze-${step}`" class="chart-bars__bar chart-bars__bar--bronze" :style="{ height: barHeight(thirdPlace.totalInstalled, step, 3) }" />
+            </div>
+          </div>
+
+          <div class="progress-rail">
+            <div class="progress-fill progress-fill--bronze" :style="{ width: progressWidth(thirdPlace.totalInstalled) }" />
+          </div>
+
+          <div class="split-stats">
+            <div class="split-stats__item">
+              <p class="split-stats__label split-stats__label--odp">ODP</p>
+              <p class="split-stats__value">{{ thirdPlace.odp }}</p>
+            </div>
+            <div class="split-stats__item">
+              <p class="split-stats__label split-stats__label--odc">ODC</p>
+              <p class="split-stats__value">{{ thirdPlace.odc }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="podium-footer podium-footer--bronze">Juara 3</div>
+      </article>
+    </div>
+
+    <div v-if="fourthPlace" class="mini-card-wrap">
+      <article class="mini-card">
+        <div class="podium-card__shine" />
+        <div class="mini-card__head">
+          <div>
+            <p class="team-label">{{ fourthPlace.name }}</p>
+            <h3 class="team-name">{{ fourthPlace.pic }}</h3>
+          </div>
+          <div class="rank-bubble rank-bubble--silver">#4</div>
+        </div>
+
+        <div class="stat-layout stat-layout--mini">
+          <div>
+            <p class="metric-label">Total Instalasi</p>
+            <p class="metric-value metric-value--silver">{{ fourthPlace.totalInstalled }}</p>
+          </div>
+          <div class="chart-bars chart-bars--silver chart-bars--mini">
+            <span v-for="step in 3" :key="`mini-${step}`" class="chart-bars__bar chart-bars__bar--silver" :style="{ height: `${22 + step * 15 + Math.max(fourthPlace.totalInstalled, 1) * 3}px` }" />
+          </div>
+        </div>
+
+        <div class="progress-rail">
+          <div class="progress-fill progress-fill--silver" :style="{ width: progressWidth(fourthPlace.totalInstalled) }" />
+        </div>
+
+        <div class="split-stats">
+          <div class="split-stats__item">
+            <p class="split-stats__label split-stats__label--odp">ODP</p>
+            <p class="split-stats__value">{{ fourthPlace.odp }}</p>
+          </div>
+          <div class="split-stats__item">
+            <p class="split-stats__label split-stats__label--odc">ODC</p>
+            <p class="split-stats__value">{{ fourthPlace.odc }}</p>
           </div>
         </div>
       </article>
     </div>
-  </section>
+  </div>
 </template>
 
 <style scoped>
-.podium-slot,
+.rank-showcase {
+  position: relative;
+  padding: 0 3rem 2rem;
+}
+
+.podium-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
 .podium-card,
-.ranking-card {
-  opacity: 0;
-  transform: translateY(18px) scale(0.98);
-  animation: cardEnter 0.6s ease-out forwards;
+.mini-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem;
+  border: 1px solid rgba(191, 219, 254, 0.45);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(246, 250, 255, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 22px 40px -28px rgba(15, 23, 42, 0.28);
 }
 
-.podium-slot:hover,
-.podium-card:hover,
-.ranking-card:hover {
-  animation-play-state: paused;
-}
-
-.rank-badge-top {
-  animation: crownPulse 2.4s ease-in-out infinite;
-}
-
-.podium-card::after {
+.podium-card::before,
+.mini-card::before {
   content: '';
   position: absolute;
-  inset: -1px;
-  border-radius: 1.5rem;
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(255, 255, 255, 0));
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.82);
   pointer-events: none;
 }
 
-.podium-card,
-.ranking-card {
+.podium-card {
+  min-height: 30.5rem;
+}
+
+.podium-card--main {
+  min-height: 33.25rem;
+  transform: translateY(-1rem);
+}
+
+.podium-card--silver {
+  margin-top: 2.1rem;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(219, 234, 254, 0.75), rgba(219, 234, 254, 0) 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(244, 248, 255, 0.98));
+}
+
+.podium-card--gold {
+  background:
+    radial-gradient(circle at 50% 10%, rgba(255, 236, 166, 0.75), rgba(255, 236, 166, 0) 24%),
+    linear-gradient(180deg, rgba(255, 253, 245, 1), rgba(255, 248, 221, 0.98));
+  border-color: rgba(250, 204, 21, 0.38);
+}
+
+.podium-card--bronze {
+  margin-top: 2.1rem;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 221, 189, 0.7), rgba(255, 221, 189, 0) 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 243, 229, 0.98));
+  border-color: rgba(251, 146, 60, 0.34);
+}
+
+.podium-card__shine {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0) 32%),
+    radial-gradient(circle at 84% 15%, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0) 18%);
+  pointer-events: none;
+}
+
+.podium-head,
+.mini-card__head {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.65rem 1.7rem 0;
+}
+
+.podium-body,
+.mini-card {
   position: relative;
 }
 
-.podium-card-top {
-  box-shadow: 0 26px 48px rgba(245, 158, 11, 0.18);
-}
-
-.spotlight-beam {
-  position: absolute;
-  left: 50%;
-  top: -3rem;
-  width: 13rem;
-  height: 18rem;
-  transform: translateX(-50%);
-  background: linear-gradient(180deg, rgba(253, 224, 71, 0.28), rgba(253, 224, 71, 0));
-  filter: blur(8px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.confetti {
-  position: absolute;
-  top: 0.8rem;
-  width: 3.4rem;
-  height: 5.6rem;
-  opacity: 0.95;
-  pointer-events: none;
-  z-index: 1;
-  background-image:
-    radial-gradient(circle, rgba(251, 191, 36, 0.9) 0 16%, transparent 18%),
-    radial-gradient(circle, rgba(59, 130, 246, 0.7) 0 14%, transparent 16%),
-    radial-gradient(circle, rgba(236, 72, 153, 0.78) 0 14%, transparent 16%);
-  background-size: 1.1rem 1.1rem, 1rem 1rem, 0.95rem 0.95rem;
-  animation: confettiDrift 4.2s ease-in-out infinite;
-}
-
-.confetti-left {
-  left: 0.8rem;
-}
-
-.confetti-right {
-  right: 0.8rem;
-  transform: scaleX(-1);
-  animation-delay: 0.6s;
-}
-
-.crown-wrap {
-  margin-bottom: -1.4rem;
-  position: relative;
-  z-index: 2;
-}
-
-.crown-badge {
+.medal-ribbon {
   position: relative;
   display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 3.2rem;
+  padding: 0.5rem 1.15rem 0.5rem 0.7rem;
+  border-radius: 1rem;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    0 16px 22px -18px rgba(15, 23, 42, 0.44);
+}
+
+.medal-ribbon::before {
+  content: '';
+  position: absolute;
+  inset: 0.22rem;
+  border-radius: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+}
+
+.medal-ribbon::after {
+  content: '';
+  position: absolute;
+  left: 0.7rem;
+  right: 0.8rem;
+  top: 0.28rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+}
+
+.medal-ribbon__icon {
+  display: inline-flex;
+  height: 2.1rem;
+  width: 2.1rem;
   align-items: center;
   justify-content: center;
-  width: 7rem;
-  height: 7rem;
-  border-radius: 9999px;
-  color: rgb(180 83 9);
-  background:
-    radial-gradient(circle at 30% 24%, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 0) 28%),
-    radial-gradient(circle at 34% 30%, rgba(254, 240, 138, 1), rgba(250, 204, 21, 0.98) 42%, rgba(217, 119, 6, 0.98) 76%, rgba(120, 53, 15, 1));
-  box-shadow:
-    inset 0 3px 2px rgba(255, 255, 255, 0.7),
-    inset 0 -12px 18px rgba(120, 53, 15, 0.28),
-    0 24px 40px rgba(180, 83, 9, 0.34),
-    0 10px 20px rgba(245, 158, 11, 0.28),
-    0 0 0 12px rgba(253, 224, 71, 0.24);
-  border: 1px solid rgba(120, 53, 15, 0.24);
-  overflow: hidden;
-  transform: perspective(180px) rotateX(12deg);
-  animation: crownFloat 2.6s ease-in-out infinite;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.18);
+  color: currentColor;
+  }
+
+.trophy-mark {
+  height: 1.45rem;
+  width: 1.45rem;
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.35));
 }
 
-.crown-badge :deep(svg) {
+.trophy-mark--gold {
+  color: #7c4300;
+}
+
+.trophy-mark--silver {
+  color: #35538f;
+}
+
+.trophy-mark--bronze {
+  color: #8b4200;
+}
+
+.medal-ribbon--silver {
+  background: linear-gradient(180deg, #dbe5f3 0%, #bbc8dd 56%, #8090b2 100%);
+  color: #21417e;
+}
+
+.medal-ribbon--gold {
+  background: linear-gradient(180deg, #f8d158 0%, #f6ae05 58%, #c57800 100%);
+}
+
+.medal-ribbon--bronze {
+  background: linear-gradient(180deg, #ffc185 0%, #f48727 56%, #bf5d00 100%);
+}
+
+.rank-bubble {
   position: relative;
-  z-index: 3;
-  filter:
-    drop-shadow(0 2px 1px rgba(255, 255, 255, 0.35))
-    drop-shadow(0 6px 6px rgba(120, 53, 15, 0.35));
-}
-
-.crown-badge__sheen,
-.crown-badge__rim {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.crown-badge__sheen {
-  z-index: 1;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(120, 53, 15, 0.08));
-  mix-blend-mode: screen;
-}
-
-.crown-badge__rim {
-  z-index: 2;
-  inset: 6px;
-  border: 2px solid rgba(255, 248, 196, 0.52);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -4px 10px rgba(146, 64, 14, 0.18);
-}
-
-.lowest-rank-mark {
   display: inline-flex;
+  height: 3.8rem;
+  width: 3.8rem;
   align-items: center;
-  gap: 0.45rem;
-  margin-bottom: 1rem;
-  padding: 0.55rem 0.95rem;
+  justify-content: center;
   border-radius: 9999px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-size: 1.6rem;
+  font-weight: 900;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 12px 20px -18px rgba(15, 23, 42, 0.42);
+}
+
+.rank-bubble::before {
+  content: '';
+  position: absolute;
+  inset: 0.28rem;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.rank-bubble--silver {
+  background: linear-gradient(180deg, #f9fbff 0%, #ccddf7 100%);
+  color: #234282;
+}
+
+.rank-bubble--gold {
+  background: linear-gradient(180deg, #fff3c6 0%, #fbd44a 100%);
+  color: #8a4b00;
+}
+
+.rank-bubble--bronze {
+  background: linear-gradient(180deg, #ffe3ca 0%, #ffb46d 100%);
+  color: #8f3c00;
+}
+
+.podium-body,
+.mini-card {
+  padding: 1.4rem 1.85rem 0;
+}
+
+.team-label {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.team-name {
+  margin-top: 0.2rem;
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: #09122d;
+}
+
+.team-name--main {
+  font-size: 3.35rem;
+}
+
+.stat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem;
+  align-items: end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.stat-layout--main {
+  grid-template-columns: minmax(0, 1fr) 9.2rem;
+  margin-top: 1.75rem;
+}
+
+.stat-layout--mini {
+  grid-template-columns: minmax(0, 1fr) 5.7rem;
+  margin-top: 1.45rem;
+}
+
+.metric-label {
+  font-size: 0.95rem;
+  font-weight: 600;
   text-transform: uppercase;
-  color: rgb(254 226 226);
-  background: linear-gradient(135deg, rgb(69 10 10), rgb(127 29 29));
-  border: 1px solid rgb(248 113 113);
-  box-shadow: 0 12px 28px rgba(127, 29, 29, 0.35);
+  letter-spacing: 0.12em;
+  color: #475569;
 }
 
-.lowest-rank-skull {
-  color: rgb(254 202 202);
-  filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.65));
+.metric-value {
+  margin-top: 0.65rem;
+  font-size: 4rem;
+  line-height: 1;
+  font-weight: 900;
 }
 
-.ranking-card-lowest::before {
+.metric-value--silver {
+  color: #173fba;
+}
+
+.metric-value--gold {
+  color: #d47a00;
+}
+
+.metric-value--bronze {
+  color: #dc5b00;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 0.42rem;
+  min-height: 10rem;
+}
+
+.chart-bars--mini {
+  min-height: 6.2rem;
+}
+
+.chart-bars__bar {
+  width: 1.5rem;
+  min-height: 2rem;
+  border-radius: 0.45rem 0.45rem 0.12rem 0.12rem;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.62),
+    0 12px 18px -14px rgba(15, 23, 42, 0.4);
+}
+
+.chart-bars__bar--silver {
+  background: linear-gradient(180deg, #8fb8ff 0%, #417fff 56%, #1744c9 100%);
+}
+
+.chart-bars__bar--gold {
+  background: linear-gradient(180deg, #ffde6b 0%, #ffba00 58%, #e58700 100%);
+}
+
+.chart-bars__bar--bronze {
+  background: linear-gradient(180deg, #ffbd63 0%, #ff7f14 58%, #d15600 100%);
+}
+
+.progress-rail {
+  position: relative;
+  margin-top: 1.45rem;
+  height: 1.1rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #eef2f8 0%, #dbe2eb 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(100, 116, 139, 0.2),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.68);
+}
+
+.progress-rail::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(248, 113, 113, 0.15), transparent 32%),
-    linear-gradient(135deg, transparent 44%, rgba(127, 29, 29, 0.16) 45%, transparent 47%),
-    linear-gradient(155deg, transparent 60%, rgba(127, 29, 29, 0.16) 61%, transparent 63%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0) 44%);
   pointer-events: none;
 }
 
-.progress-bar {
-  transform-origin: left center;
-  animation: progressGrow 0.9s ease-out both;
+.progress-fill {
+  position: relative;
+  height: 100%;
+  border-radius: inherit;
 }
 
-.podium-icon {
-  animation: iconFloat 2.8s ease-in-out infinite;
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  right: -0.35rem;
+  top: 50%;
+  height: 1.45rem;
+  width: 1.45rem;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0));
 }
 
-@keyframes cardEnter {
-  from {
-    opacity: 0;
-    transform: translateY(18px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.progress-fill--silver {
+  background: linear-gradient(90deg, #1b4fd8 0%, #2c7eff 60%, #8fcbff 100%);
 }
 
-@keyframes crownPulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.3);
-  }
-  50% {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
-  }
+.progress-fill--gold {
+  background: linear-gradient(90deg, #ffb000 0%, #f5c400 60%, #ffe56a 100%);
 }
 
-@keyframes progressGrow {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+.progress-fill--bronze {
+  background: linear-gradient(90deg, #e65a00 0%, #ff8120 60%, #ffbc68 100%);
 }
 
-@keyframes iconFloat {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
+.split-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+  padding-bottom: 1.45rem;
 }
 
-@keyframes crownFloat {
-  0%,
-  100% {
-    transform: perspective(180px) rotateX(12deg) translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: perspective(180px) rotateX(12deg) translateY(-6px) rotate(-4deg) scale(1.05);
-  }
+.split-stats__item {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgba(191, 219, 254, 0.58);
+  background: rgba(255, 255, 255, 0.74);
+  padding: 0.95rem 1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
-@keyframes confettiDrift {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(8px) rotate(5deg);
-  }
+.split-stats__item::after {
+  content: '';
+  position: absolute;
+  inset: 0.32rem;
+  border-radius: 0.76rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .podium-card,
-  .ranking-card,
-  .rank-badge-top,
-  .progress-bar,
-  .podium-icon,
-  .crown-badge,
-  .confetti {
-    animation: none;
-    opacity: 1;
+.split-stats__label {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.split-stats__label--odp {
+  color: #1d4ed8;
+}
+
+.split-stats__label--odc {
+  color: #6d28d9;
+}
+
+.split-stats__value {
+  margin-top: 0.35rem;
+  font-size: 2.25rem;
+  line-height: 1;
+  font-weight: 900;
+  color: #173fba;
+}
+
+.podium-footer {
+  position: relative;
+  display: flex;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.42);
+  color: white;
+  font-size: 1.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+.podium-footer::before {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  top: 0.35rem;
+  height: 0.6rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0));
+}
+
+.podium-footer--silver {
+  background: linear-gradient(180deg, #2f6ef6 0%, #114bcc 58%, #0e388f 100%);
+}
+
+.podium-footer--gold {
+  background: linear-gradient(180deg, #ffd247 0%, #eda900 58%, #c37500 100%);
+}
+
+.podium-footer--bronze {
+  background: linear-gradient(180deg, #ff9928 0%, #ed6700 58%, #c84e00 100%);
+}
+
+.podium-footer__star {
+  font-size: 1.25rem;
+  color: #fff7bd;
+  text-shadow: 0 0 12px rgba(255, 243, 173, 0.52);
+}
+
+.mini-card-wrap {
+  margin-top: 1.2rem;
+  width: 29.5%;
+  min-width: 20rem;
+}
+
+.mini-card {
+  min-height: 20rem;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(219, 234, 254, 0.65), rgba(219, 234, 254, 0) 20%),
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(244, 248, 255, 0.98));
+}
+
+@media (max-width: 1180px) {
+  .rank-showcase {
+    padding: 0 1rem 1.5rem;
+  }
+
+  .podium-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .podium-card--main,
+  .podium-card--silver,
+  .podium-card--bronze {
+    margin-top: 0;
     transform: none;
+  }
+
+  .mini-card-wrap {
+    width: 100%;
+    min-width: 0;
   }
 }
 </style>
