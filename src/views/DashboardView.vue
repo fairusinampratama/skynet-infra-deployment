@@ -3,6 +3,7 @@ import { useDashboard } from '../composables/useDashboard'
 import SummaryCards from '../components/SummaryCards.vue'
 import ProgressCharts from '../components/ProgressCharts.vue'
 import TeamRekapTable from '../components/TeamRekapTable.vue'
+import TeamRankingBoard from '../components/TeamRankingBoard.vue'
 
 const {
   TARGET_ODP,
@@ -16,12 +17,15 @@ const {
   remainingOdp,
   remainingOdc,
   chartData,
-  teamTotals
+  teamTotals,
+  teamRankings
 } = useDashboard()
 </script>
 
 <template>
   <div class="space-y-8">
+    <TeamRankingBoard :team-rankings="teamRankings" />
+
     <!-- Summary Cards -->
     <section>
       <SummaryCards 
