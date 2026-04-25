@@ -97,8 +97,8 @@ const latestTimeLabel = computed(() => {
               </svg>
             </div>
 
-            <div class="pt-2">
-              <p class="text-[1.05rem] font-black uppercase tracking-[0.08em] text-white md:text-[1.25rem]">
+            <div class="brand-copy pt-2">
+              <p class="brand-copy__eyebrow text-[1.05rem] font-black uppercase tracking-[0.08em] text-white md:text-[1.25rem]">
                 PEMBANGUNAN ODP & ODC
               </p>
               <div class="brand-title-wrap mt-1">
@@ -292,18 +292,34 @@ const latestTimeLabel = computed(() => {
 .brand-title-wrap {
   position: relative;
   display: inline-block;
+  padding-right: 0.35rem;
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 8rem;
+}
+
+.brand-copy__eyebrow {
+  line-height: 1.1;
+  text-shadow: 0 2px 12px rgba(8, 20, 82, 0.24);
 }
 
 .brand-title {
-  letter-spacing: 0.02em;
+  letter-spacing: 0.035em;
   color: transparent;
   background:
-    linear-gradient(180deg, #67d8ff 0%, #47b9ff 22%, #2467ff 58%, #972eff 100%);
+    linear-gradient(180deg, #8fe8ff 0%, #58c7ff 18%, #2e84ff 54%, #7132ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  text-shadow: 0 0 18px rgba(96, 165, 250, 0.16);
-  transform: skewX(-10deg);
-  filter: drop-shadow(0 8px 10px rgba(5, 20, 90, 0.28));
+  text-shadow:
+    0 0 18px rgba(96, 165, 250, 0.16),
+    0 6px 12px rgba(7, 21, 84, 0.16);
+  transform: skewX(-7deg) scaleX(0.98);
+  transform-origin: left center;
+  filter: drop-shadow(0 7px 10px rgba(5, 20, 90, 0.22));
 }
 
 .brand-title__sheen {
@@ -313,13 +329,14 @@ const latestTimeLabel = computed(() => {
   font-weight: inherit;
   line-height: inherit;
   letter-spacing: inherit;
-  transform: skewX(-10deg);
+  transform: skewX(-7deg) scaleX(0.98);
   color: transparent;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 42%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.18) 24%, rgba(255, 255, 255, 0) 48%);
   -webkit-background-clip: text;
   background-clip: text;
   pointer-events: none;
   mix-blend-mode: screen;
+  opacity: 0.82;
 }
 
 .update-badge {
@@ -385,6 +402,10 @@ const latestTimeLabel = computed(() => {
   .brand-mark {
     height: 6.3rem;
     width: 6.3rem;
+  }
+
+  .brand-copy {
+    min-height: auto;
   }
 
   .update-badge {
