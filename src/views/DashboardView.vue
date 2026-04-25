@@ -103,7 +103,6 @@ const latestTimeLabel = computed(() => {
               </p>
               <div class="brand-title-wrap mt-1">
                 <h1 class="brand-title text-[3rem] font-black leading-none md:text-[4.35rem]">SKYNET</h1>
-                <div class="brand-title__sheen">SKYNET</div>
               </div>
             </div>
           </div>
@@ -320,23 +319,6 @@ const latestTimeLabel = computed(() => {
   transform: skewX(-7deg) scaleX(0.98);
   transform-origin: left center;
   filter: drop-shadow(0 7px 10px rgba(5, 20, 90, 0.22));
-}
-
-.brand-title__sheen {
-  position: absolute;
-  inset: 0;
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: inherit;
-  letter-spacing: inherit;
-  transform: skewX(-7deg) scaleX(0.98);
-  color: transparent;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.18) 24%, rgba(255, 255, 255, 0) 48%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  opacity: 0.82;
 }
 
 .update-badge {
