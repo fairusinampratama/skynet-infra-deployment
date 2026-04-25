@@ -124,6 +124,8 @@ const isLowestRank = (rank) => rank === lowestRank.value
           >
             <div v-if="team.rank === 1" class="crown-wrap flex justify-center">
               <div class="crown-badge">
+                <div class="crown-badge__sheen" />
+                <div class="crown-badge__rim" />
                 <Crown :size="58" stroke-width="2.6" />
               </div>
             </div>
@@ -294,6 +296,7 @@ const isLowestRank = (rank) => rank === lowestRank.value
 }
 
 .crown-badge {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -301,10 +304,52 @@ const isLowestRank = (rank) => rank === lowestRank.value
   height: 7rem;
   border-radius: 9999px;
   color: rgb(180 83 9);
-  background: radial-gradient(circle at 30% 30%, rgba(254, 240, 138, 1), rgba(250, 204, 21, 0.98) 45%, rgba(217, 119, 6, 0.98));
-  box-shadow: 0 22px 48px rgba(245, 158, 11, 0.46), 0 0 0 12px rgba(253, 224, 71, 0.24);
-  border: 1px solid rgba(217, 119, 6, 0.35);
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 0) 28%),
+    radial-gradient(circle at 34% 30%, rgba(254, 240, 138, 1), rgba(250, 204, 21, 0.98) 42%, rgba(217, 119, 6, 0.98) 76%, rgba(120, 53, 15, 1));
+  box-shadow:
+    inset 0 3px 2px rgba(255, 255, 255, 0.7),
+    inset 0 -12px 18px rgba(120, 53, 15, 0.28),
+    0 24px 40px rgba(180, 83, 9, 0.34),
+    0 10px 20px rgba(245, 158, 11, 0.28),
+    0 0 0 12px rgba(253, 224, 71, 0.24);
+  border: 1px solid rgba(120, 53, 15, 0.24);
+  overflow: hidden;
+  transform: perspective(180px) rotateX(12deg);
   animation: crownFloat 2.6s ease-in-out infinite;
+}
+
+.crown-badge :deep(svg) {
+  position: relative;
+  z-index: 3;
+  filter:
+    drop-shadow(0 2px 1px rgba(255, 255, 255, 0.35))
+    drop-shadow(0 6px 6px rgba(120, 53, 15, 0.35));
+}
+
+.crown-badge__sheen,
+.crown-badge__rim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.crown-badge__sheen {
+  z-index: 1;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(120, 53, 15, 0.08));
+  mix-blend-mode: screen;
+}
+
+.crown-badge__rim {
+  z-index: 2;
+  inset: 6px;
+  border: 2px solid rgba(255, 248, 196, 0.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -4px 10px rgba(146, 64, 14, 0.18);
 }
 
 .lowest-rank-mark {
@@ -383,10 +428,10 @@ const isLowestRank = (rank) => rank === lowestRank.value
 @keyframes crownFloat {
   0%,
   100% {
-    transform: translateY(0) rotate(0deg);
+    transform: perspective(180px) rotateX(12deg) translateY(0) rotate(0deg);
   }
   50% {
-    transform: translateY(-6px) rotate(-4deg) scale(1.04);
+    transform: perspective(180px) rotateX(12deg) translateY(-6px) rotate(-4deg) scale(1.05);
   }
 }
 
