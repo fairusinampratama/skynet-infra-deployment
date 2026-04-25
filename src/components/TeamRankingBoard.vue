@@ -33,15 +33,15 @@ const getCardClass = (rank) => {
 }
 
 const getPodiumColumnClass = (rank) => {
-  if (rank === 1) return 'md:order-2 md:pt-0'
-  if (rank === 2) return 'md:order-1 md:pt-12'
-  return 'md:order-3 md:pt-20'
+  if (rank === 1) return 'md:order-2'
+  if (rank === 2) return 'md:order-1'
+  return 'md:order-3'
 }
 
 const getPodiumHeightClass = (rank) => {
-  if (rank === 1) return 'min-h-[320px]'
+  if (rank === 1) return 'min-h-[300px]'
   if (rank === 2) return 'min-h-[280px]'
-  return 'min-h-[250px]'
+  return 'min-h-[260px]'
 }
 
 const getPodiumGlowClass = (rank) => {
@@ -60,6 +60,12 @@ const getRankLabel = (rank) => {
   if (rank === 1) return 'Juara 1'
   if (rank === 2) return 'Juara 2'
   return 'Juara 3'
+}
+
+const getPedestalClass = (rank) => {
+  if (rank === 1) return 'h-28 bg-gradient-to-b from-amber-300 to-amber-500'
+  if (rank === 2) return 'h-20 bg-gradient-to-b from-slate-300 to-slate-500'
+  return 'h-14 bg-gradient-to-b from-orange-300 to-orange-500'
 }
 </script>
 
@@ -88,61 +94,73 @@ const getRankLabel = (rank) => {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <article
+          <div
             v-for="team in topThree"
             :key="`podium-${team.id}`"
-            class="podium-card relative overflow-hidden rounded-[24px] border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-            :class="[getCardClass(team.rank), getPodiumColumnClass(team.rank), getPodiumHeightClass(team.rank)]"
+            class="podium-slot flex flex-col justify-end"
+            :class="getPodiumColumnClass(team.rank)"
             :style="{ animationDelay: `${team.rank * 140}ms` }"
           >
-            <div
-              class="absolute inset-0 bg-gradient-to-br opacity-80 pointer-events-none"
-              :class="getPodiumGlowClass(team.rank)"
-            />
-            <div class="relative h-full flex flex-col">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <div class="inline-flex items-center gap-2 rounded-full bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-600 shadow-sm backdrop-blur-sm">
-                    <component :is="getRankIcon(team.rank)" :size="14" class="podium-icon" />
-                    <span>{{ getRankLabel(team.rank) }}</span>
+            <article
+              class="podium-card relative overflow-hidden rounded-[24px] border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              :class="[getCardClass(team.rank), getPodiumHeightClass(team.rank)]"
+            >
+              <div
+                class="absolute inset-0 bg-gradient-to-br opacity-80 pointer-events-none"
+                :class="getPodiumGlowClass(team.rank)"
+              />
+              <div class="relative h-full flex flex-col">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <div class="inline-flex items-center gap-2 rounded-full bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-600 shadow-sm backdrop-blur-sm">
+                      <component :is="getRankIcon(team.rank)" :size="14" class="podium-icon" />
+                      <span>{{ getRankLabel(team.rank) }}</span>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-500 mt-3">{{ team.name }}</p>
+                    <h4 class="text-2xl font-black text-gray-900 mt-1">{{ team.pic }}</h4>
                   </div>
-                  <p class="text-sm font-semibold text-gray-500 mt-3">{{ team.name }}</p>
-                  <h4 class="text-2xl font-black text-gray-900 mt-1">{{ team.pic }}</h4>
-                </div>
-                <div
-                  class="rank-badge w-12 h-12 rounded-full ring-1 flex items-center justify-center text-sm font-bold"
-                  :class="[getRankBadgeClass(team.rank), { 'rank-badge-top': team.rank === 1 }]"
-                >
-                  #{{ team.rank }}
-                </div>
-              </div>
-
-              <div class="mt-8">
-                <p class="text-sm text-gray-500">Total Instalasi</p>
-                <p class="text-5xl font-black text-gray-900 mt-2 leading-none">{{ team.totalInstalled }}</p>
-              </div>
-
-              <div class="mt-auto pt-6">
-                <div class="h-3 rounded-full bg-white/70 overflow-hidden">
                   <div
-                    class="progress-bar h-full rounded-full"
-                    :class="team.rank === 1 ? 'bg-amber-400' : team.rank === 2 ? 'bg-slate-400' : 'bg-orange-400'"
-                    :style="{ width: `${Math.min((team.totalInstalled / Math.max(topThree[0]?.totalInstalled || 1, 1)) * 100, 100)}%` }"
-                  />
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-3">
-                  <div class="rounded-xl bg-white/70 px-4 py-3 backdrop-blur-sm">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">ODP</p>
-                    <p class="text-lg font-bold text-blue-900 mt-1">{{ team.odp }}</p>
+                    class="rank-badge w-12 h-12 rounded-full ring-1 flex items-center justify-center text-sm font-bold"
+                    :class="[getRankBadgeClass(team.rank), { 'rank-badge-top': team.rank === 1 }]"
+                  >
+                    #{{ team.rank }}
                   </div>
-                  <div class="rounded-xl bg-white/70 px-4 py-3 backdrop-blur-sm">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-violet-600">ODC</p>
-                    <p class="text-lg font-bold text-violet-900 mt-1">{{ team.odc }}</p>
+                </div>
+
+                <div class="mt-8">
+                  <p class="text-sm text-gray-500">Total Instalasi</p>
+                  <p class="text-5xl font-black text-gray-900 mt-2 leading-none">{{ team.totalInstalled }}</p>
+                </div>
+
+                <div class="mt-auto pt-6">
+                  <div class="h-3 rounded-full bg-white/70 overflow-hidden">
+                    <div
+                      class="progress-bar h-full rounded-full"
+                      :class="team.rank === 1 ? 'bg-amber-400' : team.rank === 2 ? 'bg-slate-400' : 'bg-orange-400'"
+                      :style="{ width: `${Math.min((team.totalInstalled / Math.max(topThree[0]?.totalInstalled || 1, 1)) * 100, 100)}%` }"
+                    />
+                  </div>
+                  <div class="mt-4 grid grid-cols-2 gap-3">
+                    <div class="rounded-xl bg-white/70 px-4 py-3 backdrop-blur-sm">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">ODP</p>
+                      <p class="text-lg font-bold text-blue-900 mt-1">{{ team.odp }}</p>
+                    </div>
+                    <div class="rounded-xl bg-white/70 px-4 py-3 backdrop-blur-sm">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-violet-600">ODC</p>
+                      <p class="text-lg font-bold text-violet-900 mt-1">{{ team.odc }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
+            </article>
+
+            <div
+              class="podium-base relative mx-3 rounded-b-[22px] rounded-t-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
+              :class="getPedestalClass(team.rank)"
+            >
+              <div class="absolute inset-x-4 top-0 h-px bg-white/60" />
             </div>
-          </article>
+          </div>
         </div>
       </div>
     </div>
@@ -189,6 +207,7 @@ const getRankLabel = (rank) => {
 </template>
 
 <style scoped>
+.podium-slot,
 .podium-card,
 .ranking-card {
   opacity: 0;
@@ -196,6 +215,7 @@ const getRankLabel = (rank) => {
   animation: cardEnter 0.6s ease-out forwards;
 }
 
+.podium-slot:hover,
 .podium-card:hover,
 .ranking-card:hover {
   animation-play-state: paused;
