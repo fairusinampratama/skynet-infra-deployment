@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { Award, Medal, Trophy } from 'lucide-vue-next'
+import { Award, Crown, Medal, Skull, Trophy } from 'lucide-vue-next'
 
 const props = defineProps({
   teamRankings: {
@@ -11,6 +11,7 @@ const props = defineProps({
 
 const topThree = computed(() => props.teamRankings.slice(0, 3))
 const otherTeams = computed(() => props.teamRankings.slice(3))
+const lowestRank = computed(() => props.teamRankings.length)
 
 const rankBadgeClasses = {
   1: 'bg-amber-100 text-amber-700 ring-amber-200',
@@ -85,6 +86,8 @@ const getAccentStatClass = (rank) => {
   if (rank === 2) return 'from-slate-50 to-gray-50 border-slate-100'
   return 'from-orange-50 to-amber-50 border-orange-100'
 }
+
+const isLowestRank = (rank) => rank === lowestRank.value
 </script>
 
 <template>
@@ -119,6 +122,12 @@ const getAccentStatClass = (rank) => {
             :class="getPodiumColumnClass(team.rank)"
             :style="{ animationDelay: `${team.rank * 140}ms` }"
           >
+            <div v-if="team.rank === 1" class="crown-wrap flex justify-center">
+              <div class="crown-badge">
+                <Crown :size="28" />
+              </div>
+            </div>
+
             <article
               class="podium-card relative overflow-hidden rounded-[24px] border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               :class="[getCardClass(team.rank), getPodiumHeightClass(team.rank)]"
@@ -207,6 +216,11 @@ const getAccentStatClass = (rank) => {
         :class="getCardClass(team.rank)"
         :style="{ animationDelay: `${team.rank * 120}ms` }"
       >
+        <div v-if="isLowestRank(team.rank)" class="lowest-rank-mark">
+          <Skull :size="18" />
+          <span>Posisi Terbawah</span>
+        </div>
+
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="text-sm font-semibold text-gray-500">{{ team.name }}</p>
@@ -273,6 +287,41 @@ const getAccentStatClass = (rank) => {
   position: relative;
 }
 
+.crown-wrap {
+  margin-bottom: -0.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.crown-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  color: rgb(180 83 9);
+  background: radial-gradient(circle at 30% 30%, rgba(253, 224, 71, 0.95), rgba(245, 158, 11, 0.95));
+  box-shadow: 0 14px 28px rgba(245, 158, 11, 0.28);
+  animation: crownFloat 2.6s ease-in-out infinite;
+}
+
+.lowest-rank-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(69 10 10);
+  background: linear-gradient(135deg, rgb(254 226 226), rgb(254 242 242));
+  border: 1px solid rgb(252 165 165);
+}
+
 .progress-bar {
   transform-origin: left center;
   animation: progressGrow 0.9s ease-out both;
@@ -324,12 +373,23 @@ const getAccentStatClass = (rank) => {
   }
 }
 
+@keyframes crownFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-3deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .podium-card,
   .ranking-card,
   .rank-badge-top,
   .progress-bar,
-  .podium-icon {
+  .podium-icon,
+  .crown-badge {
     animation: none;
     opacity: 1;
     transform: none;
