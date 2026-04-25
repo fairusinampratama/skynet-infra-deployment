@@ -84,7 +84,23 @@ export function useDashboard() {
       totals[3].odp += Number(log.tim4?.odp) || 0
       totals[3].odc += Number(log.tim4?.odc) || 0
     })
-    return totals
+    return totals.map((team) => ({
+      ...team,
+      totalInstalled: team.odp + team.odc
+    }))
+  })
+
+  const teamRankings = computed(() => {
+    return [...teamTotals.value]
+      .sort((a, b) => {
+        if (b.totalInstalled !== a.totalInstalled) return b.totalInstalled - a.totalInstalled
+        if (b.odp !== a.odp) return b.odp - a.odp
+        return b.odc - a.odc
+      })
+      .map((team, index) => ({
+        ...team,
+        rank: index + 1
+      }))
   })
 
   const totalOdp = computed(() => {
@@ -166,6 +182,7 @@ export function useDashboard() {
     logs,
     augmentedLogs,
     teamTotals,
+    teamRankings,
     addLog,
     updateLog,
     deleteLog,
