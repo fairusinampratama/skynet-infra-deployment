@@ -68,10 +68,6 @@ const daysTone = computed(() =>
           <h2 class="mt-3 text-2xl font-bold tracking-tight sm:text-[2rem]">
             KPI Pemasangan
           </h2>
-          <p class="mt-2 max-w-sm text-sm leading-6 text-slate-200/80">
-            Fokus pada target, realisasi, progres, dan sisa pekerjaan dengan tampilan angka
-            yang lebih presisi.
-          </p>
         </div>
         <div class="rounded-2xl bg-white/10 p-3 ring-1 ring-white/15">
           <Target :size="24" />
