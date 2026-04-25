@@ -67,6 +67,24 @@ const getPedestalClass = (rank) => {
   if (rank === 2) return 'h-20 bg-gradient-to-b from-slate-300 to-slate-500'
   return 'h-14 bg-gradient-to-b from-orange-300 to-orange-500'
 }
+
+const getAccentTextClass = (rank) => {
+  if (rank === 1) return 'text-amber-700'
+  if (rank === 2) return 'text-slate-700'
+  return 'text-orange-700'
+}
+
+const getAccentChipClass = (rank) => {
+  if (rank === 1) return 'bg-amber-50/90 text-amber-800 ring-amber-200'
+  if (rank === 2) return 'bg-slate-50/90 text-slate-800 ring-slate-200'
+  return 'bg-orange-50/90 text-orange-800 ring-orange-200'
+}
+
+const getAccentStatClass = (rank) => {
+  if (rank === 1) return 'from-amber-50 to-yellow-50 border-amber-100'
+  if (rank === 2) return 'from-slate-50 to-gray-50 border-slate-100'
+  return 'from-orange-50 to-amber-50 border-orange-100'
+}
 </script>
 
 <template>
@@ -112,7 +130,10 @@ const getPedestalClass = (rank) => {
               <div class="relative h-full flex flex-col">
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <div class="inline-flex items-center gap-2 rounded-full bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-600 shadow-sm backdrop-blur-sm">
+                    <div
+                      class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] shadow-sm backdrop-blur-sm ring-1"
+                      :class="getAccentChipClass(team.rank)"
+                    >
                       <component :is="getRankIcon(team.rank)" :size="14" class="podium-icon" />
                       <span>{{ getRankLabel(team.rank) }}</span>
                     </div>
@@ -129,7 +150,9 @@ const getPedestalClass = (rank) => {
 
                 <div class="mt-8">
                   <p class="text-sm text-gray-500">Total Instalasi</p>
-                  <p class="text-5xl font-black text-gray-900 mt-2 leading-none">{{ team.totalInstalled }}</p>
+                  <p class="text-5xl font-black mt-2 leading-none" :class="getAccentTextClass(team.rank)">
+                    {{ team.totalInstalled }}
+                  </p>
                 </div>
 
                 <div class="mt-auto pt-6">
@@ -141,11 +164,17 @@ const getPedestalClass = (rank) => {
                     />
                   </div>
                   <div class="mt-4 grid grid-cols-2 gap-3">
-                    <div class="rounded-xl bg-white/70 px-4 py-3 backdrop-blur-sm">
+                    <div
+                      class="rounded-xl border bg-gradient-to-br px-4 py-3 backdrop-blur-sm"
+                      :class="getAccentStatClass(team.rank)"
+                    >
                       <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">ODP</p>
                       <p class="text-lg font-bold text-blue-900 mt-1">{{ team.odp }}</p>
                     </div>
-                    <div class="rounded-xl bg-white/70 px-4 py-3 backdrop-blur-sm">
+                    <div
+                      class="rounded-xl border bg-gradient-to-br px-4 py-3 backdrop-blur-sm"
+                      :class="getAccentStatClass(team.rank)"
+                    >
                       <p class="text-xs font-semibold uppercase tracking-wide text-violet-600">ODC</p>
                       <p class="text-lg font-bold text-violet-900 mt-1">{{ team.odc }}</p>
                     </div>
@@ -159,6 +188,11 @@ const getPedestalClass = (rank) => {
               :class="getPedestalClass(team.rank)"
             >
               <div class="absolute inset-x-4 top-0 h-px bg-white/60" />
+              <div class="absolute inset-x-0 bottom-3 flex justify-center">
+                <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white/90 ring-1 ring-white/20">
+                  {{ getRankLabel(team.rank) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
