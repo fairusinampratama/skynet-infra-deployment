@@ -30,6 +30,8 @@ const percentNumber = (value, target) => {
 const grandTotalOdp = computed(() => props.teamTotals.reduce((s, t) => s + t.odp, 0))
 const grandTotalOdc = computed(() => props.teamTotals.reduce((s, t) => s + t.odc, 0))
 const overallTotal = computed(() => grandTotalOdp.value + grandTotalOdc.value)
+const grandTotalOdpPercent = computed(() => formatPercent(grandTotalOdp.value, props.targetOdp))
+const grandTotalOdcPercent = computed(() => formatPercent(grandTotalOdc.value, props.targetOdc))
 
 const enrichedTeams = computed(() =>
   props.teamTotals.map((team, index) => ({
@@ -48,7 +50,7 @@ const enrichedTeams = computed(() =>
   >
     <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(59,130,246,0.08),transparent)]"></div>
 
-    <div class="relative flex-none border-b border-slate-200/80 px-6 py-5">
+    <div class="relative flex-none border-b border-slate-200/80 px-4 py-5 sm:px-6">
       <div class="flex items-start justify-between gap-4">
         <div>
           <div
@@ -61,7 +63,7 @@ const enrichedTeams = computed(() =>
           <p class="mt-1 text-sm text-slate-500">Pantau capaian setiap tim dengan progress yang lebih mudah dibaca.</p>
         </div>
 
-        <div class="rounded-2xl bg-white/80 p-3 text-blue-600 ring-1 ring-slate-200 shadow-sm backdrop-blur-sm">
+        <div class="hidden rounded-2xl bg-white/80 p-3 text-blue-600 ring-1 ring-slate-200 shadow-sm backdrop-blur-sm sm:block">
           <BarChart3 :size="22" />
         </div>
       </div>
@@ -69,47 +71,78 @@ const enrichedTeams = computed(() =>
       <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div class="rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm">
           <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total Tim</p>
-          <p class="mt-2 text-3xl font-black text-slate-900 tabular-nums">{{ teamTotals.length }}</p>
+          <div class="mt-2 flex items-end justify-between gap-3">
+            <p class="text-3xl font-black text-slate-900 tabular-nums">{{ teamTotals.length }}</p>
+            <p class="text-xs font-medium text-slate-400">Tim aktif</p>
+          </div>
         </div>
         <div class="rounded-2xl border border-blue-100 bg-blue-50/80 p-4 shadow-sm">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700">Total ODP</p>
-          <p class="mt-2 text-3xl font-black text-slate-900 tabular-nums">{{ grandTotalOdp }}</p>
+          <div class="flex items-start justify-between gap-3">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700">Total ODP</p>
+            <span class="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-100">
+              {{ grandTotalOdpPercent }}
+            </span>
+          </div>
+          <div class="mt-2 flex items-end justify-between gap-3">
+            <p class="text-3xl font-black text-slate-900 tabular-nums">{{ grandTotalOdp }}</p>
+            <p class="text-xs font-medium text-slate-500">dari {{ targetOdp }}</p>
+          </div>
+          <div class="mt-3 h-2.5 rounded-full bg-blue-100">
+            <div
+              class="h-2.5 rounded-full bg-[linear-gradient(90deg,_#2563eb_0%,_#38bdf8_100%)] transition-all duration-700"
+              :style="{ width: `${percentNumber(grandTotalOdp, targetOdp)}%` }"
+            ></div>
+          </div>
         </div>
         <div class="rounded-2xl border border-violet-100 bg-violet-50/80 p-4 shadow-sm">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700">Total ODC</p>
-          <p class="mt-2 text-3xl font-black text-slate-900 tabular-nums">{{ grandTotalOdc }}</p>
+          <div class="flex items-start justify-between gap-3">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700">Total ODC</p>
+            <span class="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-bold text-violet-700 ring-1 ring-violet-100">
+              {{ grandTotalOdcPercent }}
+            </span>
+          </div>
+          <div class="mt-2 flex items-end justify-between gap-3">
+            <p class="text-3xl font-black text-slate-900 tabular-nums">{{ grandTotalOdc }}</p>
+            <p class="text-xs font-medium text-slate-500">dari {{ targetOdc }}</p>
+          </div>
+          <div class="mt-3 h-2.5 rounded-full bg-violet-100">
+            <div
+              class="h-2.5 rounded-full bg-[linear-gradient(90deg,_#7c3aed_0%,_#c084fc_100%)] transition-all duration-700"
+              :style="{ width: `${percentNumber(grandTotalOdc, targetOdc)}%` }"
+            ></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="relative flex-grow space-y-4 overflow-y-auto px-5 py-5">
+    <div class="relative flex-grow space-y-4 overflow-y-auto px-4 py-5 sm:px-5">
       <article
         v-for="team in enrichedTeams"
         :key="team.id"
-        class="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.28)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-24px_rgba(59,130,246,0.28)]"
+        class="rounded-[24px] border border-slate-200 bg-white/90 p-4 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.28)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-24px_rgba(59,130,246,0.28)] sm:p-5"
       >
-        <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start justify-between gap-3 sm:gap-4">
           <div>
             <div class="flex items-center gap-3">
               <div
-                class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-sm font-bold text-white"
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-sm font-bold text-white"
               >
                 T{{ team.rank }}
               </div>
-              <div>
-                <h4 class="text-base font-bold text-slate-900">{{ team.name }}</h4>
-                <p class="text-sm text-slate-500">{{ team.pic }}</p>
+              <div class="min-w-0">
+                <h4 class="truncate text-base font-bold text-slate-900">{{ team.name }}</h4>
+                <p class="truncate text-sm text-slate-500">{{ team.pic }}</p>
               </div>
             </div>
           </div>
 
-          <div class="rounded-2xl bg-slate-50 px-3 py-2 text-right ring-1 ring-slate-200">
+          <div class="shrink-0 rounded-2xl bg-slate-50 px-3 py-2 text-right ring-1 ring-slate-200">
             <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total</p>
             <p class="mt-1 text-2xl font-black text-slate-900 tabular-nums">{{ team.totalInstalled }}</p>
           </div>
         </div>
 
-        <div class="mt-5 grid grid-cols-2 gap-3">
+        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div class="rounded-2xl border border-blue-100 bg-blue-50/80 p-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2 text-blue-700">
@@ -147,7 +180,7 @@ const enrichedTeams = computed(() =>
       </article>
     </div>
 
-    <div class="relative mt-auto border-t border-slate-200/80 bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-6 py-5">
+    <div class="relative mt-auto border-t border-slate-200/80 bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 py-5 sm:px-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Total Keseluruhan</p>
@@ -156,9 +189,15 @@ const enrichedTeams = computed(() =>
 
         <div class="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:min-w-[360px]">
           <div class="rounded-2xl border border-blue-100 bg-white/85 p-4 shadow-sm">
-            <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div class="flex items-start justify-between gap-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <span>Total ODP</span>
+              <span class="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-100">
+                {{ grandTotalOdpPercent }}
+              </span>
+            </div>
+            <div class="mt-3 flex items-end justify-between gap-3">
               <span class="text-lg text-slate-900 tabular-nums">{{ grandTotalOdp }}</span>
+              <span class="text-xs font-medium text-slate-400">Target {{ targetOdp }}</span>
             </div>
             <div class="mt-3 h-2.5 rounded-full bg-blue-100">
               <div
@@ -166,13 +205,18 @@ const enrichedTeams = computed(() =>
                 :style="{ width: `${percentNumber(grandTotalOdp, targetOdp)}%` }"
               ></div>
             </div>
-            <p class="mt-2 text-xs font-medium text-blue-800">{{ formatPercent(grandTotalOdp, targetOdp) }}</p>
           </div>
 
           <div class="rounded-2xl border border-violet-100 bg-white/85 p-4 shadow-sm">
-            <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div class="flex items-start justify-between gap-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <span>Total ODC</span>
+              <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 ring-1 ring-violet-100">
+                {{ grandTotalOdcPercent }}
+              </span>
+            </div>
+            <div class="mt-3 flex items-end justify-between gap-3">
               <span class="text-lg text-slate-900 tabular-nums">{{ grandTotalOdc }}</span>
+              <span class="text-xs font-medium text-slate-400">Target {{ targetOdc }}</span>
             </div>
             <div class="mt-3 h-2.5 rounded-full bg-violet-100">
               <div
@@ -180,7 +224,6 @@ const enrichedTeams = computed(() =>
                 :style="{ width: `${percentNumber(grandTotalOdc, targetOdc)}%` }"
               ></div>
             </div>
-            <p class="mt-2 text-xs font-medium text-violet-800">{{ formatPercent(grandTotalOdc, targetOdc) }}</p>
           </div>
         </div>
       </div>
