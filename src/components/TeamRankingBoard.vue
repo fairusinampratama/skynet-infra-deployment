@@ -124,7 +124,7 @@ const isLowestRank = (rank) => rank === lowestRank.value
           >
             <div v-if="team.rank === 1" class="crown-wrap flex justify-center">
               <div class="crown-badge">
-                <Crown :size="42" stroke-width="2.4" />
+                <Crown :size="58" stroke-width="2.6" />
               </div>
             </div>
 
@@ -288,7 +288,7 @@ const isLowestRank = (rank) => rank === lowestRank.value
 }
 
 .crown-wrap {
-  margin-bottom: -0.9rem;
+  margin-bottom: -1.4rem;
   position: relative;
   z-index: 2;
 }
@@ -297,12 +297,12 @@ const isLowestRank = (rank) => rank === lowestRank.value
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 5.25rem;
-  height: 5.25rem;
+  width: 7rem;
+  height: 7rem;
   border-radius: 9999px;
   color: rgb(180 83 9);
   background: radial-gradient(circle at 30% 30%, rgba(254, 240, 138, 1), rgba(250, 204, 21, 0.98) 45%, rgba(217, 119, 6, 0.98));
-  box-shadow: 0 18px 40px rgba(245, 158, 11, 0.42), 0 0 0 8px rgba(253, 224, 71, 0.22);
+  box-shadow: 0 22px 48px rgba(245, 158, 11, 0.46), 0 0 0 12px rgba(253, 224, 71, 0.24);
   border: 1px solid rgba(217, 119, 6, 0.35);
   animation: crownFloat 2.6s ease-in-out infinite;
 }
