@@ -124,7 +124,7 @@ const isLowestRank = (rank) => rank === lowestRank.value
           >
             <div v-if="team.rank === 1" class="crown-wrap flex justify-center">
               <div class="crown-badge">
-                <Crown :size="28" />
+                <Crown :size="42" stroke-width="2.4" />
               </div>
             </div>
 
@@ -217,7 +217,7 @@ const isLowestRank = (rank) => rank === lowestRank.value
         :style="{ animationDelay: `${team.rank * 120}ms` }"
       >
         <div v-if="isLowestRank(team.rank)" class="lowest-rank-mark">
-          <Skull :size="18" />
+          <Skull :size="28" stroke-width="2.4" class="lowest-rank-skull" />
           <span>Posisi Terbawah</span>
         </div>
 
@@ -288,7 +288,7 @@ const isLowestRank = (rank) => rank === lowestRank.value
 }
 
 .crown-wrap {
-  margin-bottom: -0.5rem;
+  margin-bottom: -0.9rem;
   position: relative;
   z-index: 2;
 }
@@ -297,12 +297,13 @@ const isLowestRank = (rank) => rank === lowestRank.value
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 5.25rem;
+  height: 5.25rem;
   border-radius: 9999px;
   color: rgb(180 83 9);
-  background: radial-gradient(circle at 30% 30%, rgba(253, 224, 71, 0.95), rgba(245, 158, 11, 0.95));
-  box-shadow: 0 14px 28px rgba(245, 158, 11, 0.28);
+  background: radial-gradient(circle at 30% 30%, rgba(254, 240, 138, 1), rgba(250, 204, 21, 0.98) 45%, rgba(217, 119, 6, 0.98));
+  box-shadow: 0 18px 40px rgba(245, 158, 11, 0.42), 0 0 0 8px rgba(253, 224, 71, 0.22);
+  border: 1px solid rgba(217, 119, 6, 0.35);
   animation: crownFloat 2.6s ease-in-out infinite;
 }
 
@@ -310,16 +311,22 @@ const isLowestRank = (rank) => rank === lowestRank.value
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  margin-bottom: 0.9rem;
-  padding: 0.35rem 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.55rem 0.95rem;
   border-radius: 9999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgb(69 10 10);
-  background: linear-gradient(135deg, rgb(254 226 226), rgb(254 242 242));
-  border: 1px solid rgb(252 165 165);
+  color: rgb(254 226 226);
+  background: linear-gradient(135deg, rgb(69 10 10), rgb(127 29 29));
+  border: 1px solid rgb(248 113 113);
+  box-shadow: 0 12px 28px rgba(127, 29, 29, 0.35);
+}
+
+.lowest-rank-skull {
+  color: rgb(254 202 202);
+  filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.65));
 }
 
 .progress-bar {
@@ -379,7 +386,7 @@ const isLowestRank = (rank) => rank === lowestRank.value
     transform: translateY(0) rotate(0deg);
   }
   50% {
-    transform: translateY(-4px) rotate(-3deg);
+    transform: translateY(-6px) rotate(-4deg) scale(1.04);
   }
 }
 
