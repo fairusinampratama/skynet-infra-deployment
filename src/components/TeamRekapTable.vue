@@ -181,13 +181,13 @@ const enrichedTeams = computed(() =>
     </div>
 
     <div class="relative mt-auto border-t border-slate-200/80 bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 py-5 sm:px-6">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div class="min-w-0">
           <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Total Keseluruhan</p>
           <p class="mt-2 text-3xl font-black text-slate-900 tabular-nums">{{ overallTotal }}</p>
         </div>
 
-        <div class="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:min-w-[360px]">
+        <div class="grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:ml-6 xl:max-w-[520px]">
           <div class="rounded-2xl border border-blue-100 bg-white/85 p-4 shadow-sm">
             <div class="flex items-start justify-between gap-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <span>Total ODP</span>
