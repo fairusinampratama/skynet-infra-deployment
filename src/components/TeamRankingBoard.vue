@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { Award, Crown, Medal, Skull, Trophy } from 'lucide-vue-next'
+import { Award, Crown, Medal, Skull, Sparkles, TrendingDown, TrendingUp, Trophy } from 'lucide-vue-next'
 
 const props = defineProps({
   teamRankings: {
@@ -88,6 +88,32 @@ const getAccentStatClass = (rank) => {
 }
 
 const isLowestRank = (rank) => rank === lowestRank.value
+
+const getTrendState = (team) => {
+  if (team.trendDelta > 0 || team.rankChange > 0) return 'up'
+  if (team.trendDelta < 0 || team.rankChange < 0) return 'down'
+  return 'flat'
+}
+
+const getTrendLabel = (team) => {
+  if (team.rank === 1 && team.leadOverNext > 0) return `Unggul ${team.leadOverNext} poin dari posisi 2`
+  if (team.gapToAbove > 0) return `Selisih ${team.gapToAbove} poin dari atas`
+  return 'Puncak klasemen sementara'
+}
+
+const getTrendChipClass = (team) => {
+  const state = getTrendState(team)
+  if (state === 'up') return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+  if (state === 'down') return 'bg-rose-50 text-rose-700 ring-rose-200'
+  return 'bg-slate-100 text-slate-600 ring-slate-200'
+}
+
+const getTrendIcon = (team) => {
+  const state = getTrendState(team)
+  if (state === 'up') return TrendingUp
+  if (state === 'down') return TrendingDown
+  return Sparkles
+}
 </script>
 
 <template>
@@ -132,8 +158,11 @@ const isLowestRank = (rank) => rank === lowestRank.value
 
             <article
               class="podium-card relative overflow-hidden rounded-[24px] border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              :class="[getCardClass(team.rank), getPodiumHeightClass(team.rank)]"
+              :class="[getCardClass(team.rank), getPodiumHeightClass(team.rank), { 'podium-card-top': team.rank === 1 }]"
             >
+              <div v-if="team.rank === 1" class="spotlight-beam" />
+              <div v-if="team.rank === 1" class="confetti confetti-left" />
+              <div v-if="team.rank === 1" class="confetti confetti-right" />
               <div
                 class="absolute inset-0 bg-gradient-to-br opacity-80 pointer-events-none"
                 :class="getPodiumGlowClass(team.rank)"
@@ -159,11 +188,31 @@ const isLowestRank = (rank) => rank === lowestRank.value
                   </div>
                 </div>
 
+                <div class="mt-4 flex flex-wrap gap-2">
+                  <div
+                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ring-1"
+                    :class="getTrendChipClass(team)"
+                  >
+                    <component :is="getTrendIcon(team)" :size="14" />
+                    <span>
+                      {{ team.trendDelta === 0 ? 'Stabil' : `${team.trendDelta > 0 ? '+' : ''}${team.trendDelta} Hari Ini` }}
+                    </span>
+                  </div>
+                  <div
+                    v-for="badge in team.badges"
+                    :key="badge"
+                    class="inline-flex items-center rounded-full bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-700 ring-1 ring-white/70"
+                  >
+                    {{ badge }}
+                  </div>
+                </div>
+
                 <div class="mt-8">
                   <p class="text-sm text-gray-500">Total Instalasi</p>
                   <p class="text-5xl font-black mt-2 leading-none" :class="getAccentTextClass(team.rank)">
                     {{ team.totalInstalled }}
                   </p>
+                  <p class="mt-2 text-sm font-medium text-slate-600">{{ getTrendLabel(team) }}</p>
                 </div>
 
                 <div class="mt-auto pt-6">
@@ -215,7 +264,7 @@ const isLowestRank = (rank) => rank === lowestRank.value
         v-for="team in otherTeams"
         :key="team.id"
         class="ranking-card rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-        :class="getCardClass(team.rank)"
+        :class="[getCardClass(team.rank), { 'ranking-card-lowest': isLowestRank(team.rank) }]"
         :style="{ animationDelay: `${team.rank * 120}ms` }"
       >
         <div v-if="isLowestRank(team.rank)" class="lowest-rank-mark">
@@ -236,9 +285,35 @@ const isLowestRank = (rank) => rank === lowestRank.value
           </div>
         </div>
 
+        <div class="mt-4 flex flex-wrap gap-2">
+          <div
+            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ring-1"
+            :class="getTrendChipClass(team)"
+          >
+            <component :is="getTrendIcon(team)" :size="14" />
+            <span>
+              {{ team.trendDelta === 0 ? 'Stabil' : `${team.trendDelta > 0 ? '+' : ''}${team.trendDelta} Hari Ini` }}
+            </span>
+          </div>
+          <div
+            v-for="badge in team.badges"
+            :key="badge"
+            class="inline-flex items-center rounded-full bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-700 ring-1 ring-slate-200"
+          >
+            {{ badge }}
+          </div>
+          <div
+            v-if="isLowestRank(team.rank)"
+            class="inline-flex items-center rounded-full bg-rose-950/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-rose-100 ring-1 ring-rose-400/40"
+          >
+            Perlu Dikejar
+          </div>
+        </div>
+
         <div class="mt-6">
           <p class="text-sm text-gray-500">Total Instalasi</p>
           <p class="text-3xl font-extrabold text-gray-900 mt-1">{{ team.totalInstalled }}</p>
+          <p class="mt-2 text-sm font-medium text-slate-600">{{ getTrendLabel(team) }}</p>
         </div>
 
         <div class="mt-5 grid grid-cols-2 gap-3">
@@ -287,6 +362,49 @@ const isLowestRank = (rank) => rank === lowestRank.value
 .podium-card,
 .ranking-card {
   position: relative;
+}
+
+.podium-card-top {
+  box-shadow: 0 26px 48px rgba(245, 158, 11, 0.18);
+}
+
+.spotlight-beam {
+  position: absolute;
+  left: 50%;
+  top: -3rem;
+  width: 13rem;
+  height: 18rem;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(253, 224, 71, 0.28), rgba(253, 224, 71, 0));
+  filter: blur(8px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.confetti {
+  position: absolute;
+  top: 0.8rem;
+  width: 3.4rem;
+  height: 5.6rem;
+  opacity: 0.95;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    radial-gradient(circle, rgba(251, 191, 36, 0.9) 0 16%, transparent 18%),
+    radial-gradient(circle, rgba(59, 130, 246, 0.7) 0 14%, transparent 16%),
+    radial-gradient(circle, rgba(236, 72, 153, 0.78) 0 14%, transparent 16%);
+  background-size: 1.1rem 1.1rem, 1rem 1rem, 0.95rem 0.95rem;
+  animation: confettiDrift 4.2s ease-in-out infinite;
+}
+
+.confetti-left {
+  left: 0.8rem;
+}
+
+.confetti-right {
+  right: 0.8rem;
+  transform: scaleX(-1);
+  animation-delay: 0.6s;
 }
 
 .crown-wrap {
@@ -374,6 +492,18 @@ const isLowestRank = (rank) => rank === lowestRank.value
   filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.65));
 }
 
+.ranking-card-lowest::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(248, 113, 113, 0.15), transparent 32%),
+    linear-gradient(135deg, transparent 44%, rgba(127, 29, 29, 0.16) 45%, transparent 47%),
+    linear-gradient(155deg, transparent 60%, rgba(127, 29, 29, 0.16) 61%, transparent 63%);
+  pointer-events: none;
+}
+
 .progress-bar {
   transform-origin: left center;
   animation: progressGrow 0.9s ease-out both;
@@ -435,13 +565,24 @@ const isLowestRank = (rank) => rank === lowestRank.value
   }
 }
 
+@keyframes confettiDrift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(8px) rotate(5deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .podium-card,
   .ranking-card,
   .rank-badge-top,
   .progress-bar,
   .podium-icon,
-  .crown-badge {
+  .crown-badge,
+  .confetti {
     animation: none;
     opacity: 1;
     transform: none;

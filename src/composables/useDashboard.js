@@ -91,7 +91,65 @@ export function useDashboard() {
   })
 
   const teamRankings = computed(() => {
-    return [...teamTotals.value]
+    const teamKeys = ['tim1', 'tim2', 'tim3', 'tim4']
+
+    const latestLog = logs.value[logs.value.length - 1] ?? null
+    const previousLog = logs.value[logs.value.length - 2] ?? null
+
+    const previousTotals = [
+      { totalInstalled: 0, odp: 0, odc: 0 },
+      { totalInstalled: 0, odp: 0, odc: 0 },
+      { totalInstalled: 0, odp: 0, odc: 0 },
+      { totalInstalled: 0, odp: 0, odc: 0 }
+    ]
+
+    logs.value.slice(0, -1).forEach((log) => {
+      teamKeys.forEach((key, index) => {
+        previousTotals[index].odp += Number(log[key]?.odp) || 0
+        previousTotals[index].odc += Number(log[key]?.odc) || 0
+        previousTotals[index].totalInstalled =
+          previousTotals[index].odp + previousTotals[index].odc
+      })
+    })
+
+    const previousRankingMap = [...teamTotals.value]
+      .map((team, index) => ({
+        id: team.id,
+        name: team.name,
+        pic: team.pic,
+        odp: previousTotals[index].odp,
+        odc: previousTotals[index].odc,
+        totalInstalled: previousTotals[index].totalInstalled
+      }))
+      .sort((a, b) => {
+        if (b.totalInstalled !== a.totalInstalled) return b.totalInstalled - a.totalInstalled
+        if (b.odp !== a.odp) return b.odp - a.odp
+        return b.odc - a.odc
+      })
+      .reduce((acc, team, index) => {
+        acc[team.id] = index + 1
+        return acc
+      }, {})
+
+    const maxOdp = Math.max(...teamTotals.value.map((team) => team.odp), 0)
+    const maxOdc = Math.max(...teamTotals.value.map((team) => team.odc), 0)
+
+    const latestDayTotals = teamKeys.map((key) => ({
+      totalInstalled: ((Number(latestLog?.[key]?.odp) || 0) + (Number(latestLog?.[key]?.odc) || 0)),
+      odp: Number(latestLog?.[key]?.odp) || 0,
+      odc: Number(latestLog?.[key]?.odc) || 0
+    }))
+
+    const previousDayTotals = teamKeys.map((key) => ({
+      totalInstalled: ((Number(previousLog?.[key]?.odp) || 0) + (Number(previousLog?.[key]?.odc) || 0)),
+      odp: Number(previousLog?.[key]?.odp) || 0,
+      odc: Number(previousLog?.[key]?.odc) || 0
+    }))
+
+    const momentumValues = latestDayTotals.map((team, index) => team.totalInstalled - previousDayTotals[index].totalInstalled)
+    const maxMomentum = Math.max(...momentumValues, 0)
+
+    const rankedTeams = [...teamTotals.value]
       .sort((a, b) => {
         if (b.totalInstalled !== a.totalInstalled) return b.totalInstalled - a.totalInstalled
         if (b.odp !== a.odp) return b.odp - a.odp
@@ -101,6 +159,39 @@ export function useDashboard() {
         ...team,
         rank: index + 1
       }))
+
+    return rankedTeams.map((team) => {
+      const teamIndex = team.id - 1
+      const currentDaily = latestDayTotals[teamIndex]?.totalInstalled || 0
+      const previousDaily = previousDayTotals[teamIndex]?.totalInstalled || 0
+      const trendDelta = currentDaily - previousDaily
+      const previousRank = previousRankingMap[team.id] ?? team.rank
+      const rankChange = previousRank - team.rank
+      const badges = []
+
+      if (team.odp > 0 && team.odp === maxOdp) badges.push('ODP Terbanyak')
+      if (team.odc > 0 && team.odc === maxOdc) badges.push('ODC Terbanyak')
+      if (trendDelta > 0 && trendDelta === maxMomentum) badges.push('Momentum Terbaik')
+
+      return {
+        ...team,
+        previousRank,
+        rankChange,
+        trendDelta,
+        currentDaily,
+        previousDaily,
+        badges
+      }
+    }).map((team, index, arr) => {
+      const teamAbove = arr[index - 1] ?? null
+      const teamBelow = arr[index + 1] ?? null
+
+      return {
+        ...team,
+        gapToAbove: teamAbove ? teamAbove.totalInstalled - team.totalInstalled : 0,
+        leadOverNext: teamBelow ? team.totalInstalled - teamBelow.totalInstalled : 0
+      }
+    })
   })
 
   const totalOdp = computed(() => {
