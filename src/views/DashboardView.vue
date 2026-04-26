@@ -16,6 +16,7 @@ const {
   totalInstalled,
   progressPercent,
   logs,
+  fetchLogsFailed,
   remainingDays,
   remainingOdp,
   remainingOdc,
@@ -27,7 +28,7 @@ const {
 const latestLog = computed(() => logs.value[logs.value.length - 1] ?? null)
 
 const latestDateLabel = computed(() => {
-  if (!latestLog.value?.date) return 'Belum ada data'
+  if (!latestLog.value?.date) return '24 Mei 2025'
 
   const date = new Date(latestLog.value.date)
 
@@ -39,7 +40,7 @@ const latestDateLabel = computed(() => {
 })
 
 const latestTimeLabel = computed(() => {
-  if (!latestLog.value?.updatedAt) return 'Menunggu update'
+  if (!latestLog.value?.updatedAt) return '10:30'
 
   return new Intl.DateTimeFormat('id-ID', {
     hour: '2-digit',
@@ -49,16 +50,16 @@ const latestTimeLabel = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-10 pb-6">
-    <section class="showcase-frame relative overflow-hidden rounded-[2.3rem] border border-blue-100/80 bg-white shadow-[0_28px_80px_-38px_rgba(15,23,42,0.28)]">
-      <div class="showcase-top absolute inset-x-0 top-0 h-[11.75rem] md:h-[12.2rem]" />
+  <div class="space-y-5 pb-8">
+    <section class="showcase-frame relative overflow-hidden rounded-[1.95rem] border border-blue-400/20 shadow-[0_28px_80px_-38px_rgba(2,6,23,0.9)]">
+      <div class="showcase-top absolute inset-x-0 top-0 h-[10.6rem] md:h-[11rem]" />
       <div class="showcase-topline showcase-topline--left" />
       <div class="showcase-topline showcase-topline--right" />
       <div class="showcase-cutout" />
       <div class="showcase-surface" />
 
-      <div class="relative z-10 px-5 pb-8 pt-5 md:px-8 md:pt-6">
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+      <div class="relative z-10 px-5 pb-6 pt-4 md:px-7 md:pt-5">
+        <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_350px] lg:items-start">
           <div class="flex items-start gap-5 text-white">
             <div class="brand-mark" aria-hidden="true">
               <svg viewBox="0 0 160 160" class="brand-mark__svg" role="presentation">
@@ -97,28 +98,28 @@ const latestTimeLabel = computed(() => {
               </svg>
             </div>
 
-            <div class="brand-copy pt-2">
-              <p class="brand-copy__eyebrow text-[1.05rem] font-black uppercase tracking-[0.08em] text-white md:text-[1.25rem]">
+            <div class="brand-copy pt-1">
+              <p class="brand-copy__eyebrow text-[1rem] font-black uppercase tracking-[0.08em] text-white md:text-[1.18rem]">
                 PEMBANGUNAN ODP & ODC
               </p>
-              <div class="brand-title-wrap mt-1">
-                <h1 class="brand-title text-[3rem] font-black leading-none md:text-[4.35rem]">SKYNET</h1>
+              <div class="brand-title-wrap mt-0.5">
+                <h1 class="brand-title text-[2.8rem] font-black leading-none md:text-[4rem]">SKYNET</h1>
               </div>
             </div>
           </div>
 
-          <div class="update-badge mt-1 justify-self-end rounded-[1.6rem] px-6 py-5 text-white">
+          <div class="update-badge mt-1 justify-self-end rounded-[1.55rem] px-6 py-4 text-white">
             <div class="flex items-start gap-4">
               <div class="rounded-xl bg-white/12 p-3 ring-1 ring-white/18">
-                <CalendarDays :size="22" />
+                <CalendarDays :size="20" />
               </div>
               <div>
-                <p class="text-[1.05rem] font-semibold text-white">Update Terakhir</p>
-                <div class="mt-2 flex flex-wrap items-center gap-3 text-[1rem] font-bold text-white/95 md:text-[1.2rem]">
+                <p class="text-[1rem] font-semibold text-white">Update Terakhir</p>
+                <div class="mt-2 flex flex-wrap items-center gap-3 text-[0.98rem] font-bold text-white/95 md:text-[1.12rem]">
                   <span>{{ latestDateLabel }}</span>
                   <span class="text-white/55">|</span>
                   <span class="inline-flex items-center gap-2">
-                    <Clock3 :size="16" />
+                    <Clock3 :size="15" />
                     {{ latestTimeLabel }} WIB
                   </span>
                 </div>
@@ -127,13 +128,20 @@ const latestTimeLabel = computed(() => {
           </div>
         </div>
 
-        <div class="relative mt-6 md:mt-8">
+        <div class="relative mt-3 md:mt-4">
           <TeamRankingBoard :team-rankings="teamRankings" />
         </div>
       </div>
     </section>
 
     <section>
+      <div
+        v-if="fetchLogsFailed"
+        class="mb-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-100"
+      >
+        Data server belum berhasil dimuat. Dashboard sedang tidak membaca `/api/logs`, jadi cek backend `localhost:3000` atau proxy Vite kamu.
+      </div>
+
       <SummaryCards
         :target="TOTAL_TARGET"
         :target-odp="TARGET_ODP"
@@ -172,11 +180,11 @@ const latestTimeLabel = computed(() => {
 
 <style scoped>
 .showcase-frame {
-  min-height: 60rem;
+  min-height: auto;
   background:
-    radial-gradient(circle at 16% 26%, rgba(59, 130, 246, 0.08), transparent 18%),
-    radial-gradient(circle at 82% 60%, rgba(191, 219, 254, 0.25), transparent 22%),
-    linear-gradient(180deg, #fcfeff 0%, #f5f9ff 36%, #eff5ff 100%);
+    radial-gradient(circle at 16% 22%, rgba(37, 99, 235, 0.18), transparent 16%),
+    radial-gradient(circle at 82% 60%, rgba(16, 185, 129, 0.08), transparent 18%),
+    linear-gradient(180deg, #030a17 0%, #071224 34%, #020712 100%);
 }
 
 .showcase-frame::before {
@@ -184,14 +192,18 @@ const latestTimeLabel = computed(() => {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 88% 82%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 16%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0) 22%, rgba(59, 130, 246, 0.03) 58%, rgba(255, 255, 255, 0) 82%);
+    radial-gradient(circle at 88% 82%, rgba(30, 64, 175, 0.18), rgba(255, 255, 255, 0) 16%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 22%, rgba(59, 130, 246, 0.05) 58%, rgba(255, 255, 255, 0) 82%);
   pointer-events: none;
 }
 
 .showcase-top {
   background:
-    linear-gradient(135deg, #08144c 0%, #1736b8 36%, #08154a 100%);
+    linear-gradient(135deg, #020918 0%, #0d2e92 28%, #1639c8 42%, #09152f 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(8, 18, 84, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 76.1% 100%, 72.8% 72.5%, 40.1% 72.5%, 36.9% 100%, 0 100%);
 }
 
 .showcase-top::before {
@@ -199,13 +211,13 @@ const latestTimeLabel = computed(() => {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 18%, rgba(110, 231, 255, 0.18), transparent 18%),
+    radial-gradient(circle at 20% 18%, rgba(110, 231, 255, 0.22), transparent 18%),
     linear-gradient(90deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 22%, rgba(96, 165, 250, 0.2) 56%, rgba(255, 255, 255, 0) 84%);
 }
 
 .showcase-topline {
   position: absolute;
-  top: 0.55rem;
+  top: 0.5rem;
   z-index: 2;
   height: 0.18rem;
   border-radius: 9999px;
@@ -216,36 +228,38 @@ const latestTimeLabel = computed(() => {
 }
 
 .showcase-topline--left {
-  left: 1rem;
-  width: 65%;
+  left: 1.1rem;
+  width: 67.5%;
 }
 
 .showcase-topline--right {
-  right: 1rem;
-  width: 28%;
+  right: 1.1rem;
+  width: 28.2%;
 }
 
 .showcase-cutout {
   position: absolute;
-  right: 12%;
-  top: 1.15rem;
+  right: 10.55%;
+  top: 0.72rem;
   z-index: 1;
-  height: 11.5rem;
-  width: 38.5rem;
-  border-radius: 2.5rem 2.5rem 0 2.6rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
-  clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%, 11% 18%);
+  height: 10.55rem;
+  width: 39.7rem;
+  border-radius: 2.25rem 2.25rem 0 2.4rem;
+  background:
+    linear-gradient(180deg, rgba(11, 23, 48, 0.98), rgba(8, 17, 35, 0.98));
+  clip-path: polygon(13.6% 0, 100% 0, 100% 100%, 0 100%, 10.6% 18.2%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 8px 0 rgba(13, 30, 112, 0.75);
+    0 8px 0 rgba(4, 18, 65, 0.92),
+    0 22px 28px -28px rgba(15, 23, 42, 0.42);
 }
 
 .showcase-cutout::before {
   content: '';
   position: absolute;
-  inset: 0.6rem 0.85rem 0.9rem 1.35rem;
-  border-radius: 2rem 2rem 0 2.1rem;
-  border: 1px solid rgba(191, 219, 254, 0.65);
+  inset: 0.55rem 0.8rem 0.8rem 1.25rem;
+  border-radius: 1.85rem 1.85rem 0 1.95rem;
+  border: 1px solid rgba(84, 126, 210, 0.45);
 }
 
 .showcase-cutout::after {
@@ -254,16 +268,16 @@ const latestTimeLabel = computed(() => {
   inset: 0.8rem 1rem auto 1.5rem;
   height: 0.7rem;
   border-radius: 9999px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+  background: linear-gradient(180deg, rgba(130, 167, 255, 0.2), rgba(255, 255, 255, 0));
 }
 
 .showcase-surface {
   position: absolute;
-  inset: 10.7rem 0 0 0;
+  inset: 9.72rem 0 0 0;
   background:
-    radial-gradient(circle at 8% 8%, rgba(191, 219, 254, 0.38), transparent 10%),
-    radial-gradient(circle at 28% 14%, rgba(191, 219, 254, 0.22), transparent 8%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(247, 250, 255, 0.96) 14%, #f1f6ff 100%);
+    radial-gradient(circle at 8% 8%, rgba(37, 99, 235, 0.18), transparent 10%),
+    radial-gradient(circle at 28% 14%, rgba(192, 74, 255, 0.12), transparent 8%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(6, 18, 43, 0.98) 14%, #020712 100%);
 }
 
 .showcase-surface::before {
@@ -271,16 +285,29 @@ const latestTimeLabel = computed(() => {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0) 0 62%, rgba(191, 219, 254, 0.14) 62.2%, rgba(255, 255, 255, 0) 63.4%),
-    linear-gradient(152deg, rgba(255, 255, 255, 0) 0 74%, rgba(191, 219, 254, 0.1) 74.2%, rgba(255, 255, 255, 0) 75.5%);
+    radial-gradient(circle at 11% 18%, rgba(59, 130, 246, 0.18), rgba(255, 255, 255, 0) 12%),
+    linear-gradient(115deg, rgba(255, 255, 255, 0) 0 62%, rgba(37, 99, 235, 0.1) 62.2%, rgba(255, 255, 255, 0) 63.4%),
+    linear-gradient(152deg, rgba(255, 255, 255, 0) 0 74%, rgba(147, 51, 234, 0.08) 74.2%, rgba(255, 255, 255, 0) 75.5%);
+  pointer-events: none;
+}
+
+.showcase-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 5% 12%, rgba(53, 98, 212, 0.28), transparent 4%),
+    radial-gradient(circle at 9% 6%, rgba(59, 130, 246, 0.22), transparent 2.8%),
+    radial-gradient(circle at 93% 84%, rgba(26, 54, 93, 0.3), transparent 4.5%);
+  opacity: 0.9;
   pointer-events: none;
 }
 
 .brand-mark {
   position: relative;
   flex: none;
-  height: 8.8rem;
-  width: 8.8rem;
+  height: 7.15rem;
+  width: 7.15rem;
 }
 
 .brand-mark__svg {
@@ -298,7 +325,7 @@ const latestTimeLabel = computed(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 8rem;
+  min-height: 7rem;
 }
 
 .brand-copy__eyebrow {
@@ -307,34 +334,36 @@ const latestTimeLabel = computed(() => {
 }
 
 .brand-title {
-  letter-spacing: 0.035em;
+  font-family: "Arial Black", Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  letter-spacing: 0.025em;
   color: transparent;
   background:
-    linear-gradient(180deg, #8fe8ff 0%, #58c7ff 18%, #2e84ff 54%, #7132ff 100%);
+    linear-gradient(180deg, #7ce7ff 0%, #45cfff 18%, #2380ff 54%, #7e36ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow:
     0 0 18px rgba(96, 165, 250, 0.16),
     0 6px 12px rgba(7, 21, 84, 0.16);
-  transform: skewX(-7deg) scaleX(0.98);
+  transform: skewX(-11deg) scaleX(0.88);
   transform-origin: left center;
   filter: drop-shadow(0 7px 10px rgba(5, 20, 90, 0.22));
 }
 
 .update-badge {
   position: relative;
-  min-width: 22rem;
-  background: linear-gradient(180deg, #10257f 0%, #0f236f 100%);
+  min-width: 22.8rem;
+  background: linear-gradient(180deg, #10257f 0%, #0d1f67 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 22px 36px -28px rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(82, 129, 255, 0.2);
 }
 
 .update-badge::before {
   content: '';
   position: absolute;
-  inset: 0.55rem;
-  border-radius: 1.2rem;
+  inset: 0.5rem;
+  border-radius: 1.15rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
 }
 

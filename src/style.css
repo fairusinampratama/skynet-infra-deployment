@@ -9,16 +9,16 @@
 
 html {
   background:
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 36%),
-    linear-gradient(180deg, #f8fbff 0%, #edf4ff 45%, #f8fafc 100%);
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 36%),
+    linear-gradient(180deg, #020712 0%, #071120 45%, #020712 100%);
 }
 
 body {
-  @apply text-slate-900;
+  @apply text-slate-100;
   min-height: 100vh;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(239, 246, 255, 0.88)),
-    linear-gradient(180deg, #f8fbff 0%, #eef4ff 48%, #f8fafc 100%);
+    linear-gradient(135deg, rgba(2, 6, 23, 0.98), rgba(4, 18, 39, 0.98)),
+    linear-gradient(180deg, #020712 0%, #071120 48%, #020712 100%);
 }
 
 #app {
