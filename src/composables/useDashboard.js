@@ -1,6 +1,15 @@
 import { computed, ref, onMounted } from 'vue'
 
 const logs = ref([])
+const hasFetchedLogs = ref(false)
+const fetchLogsFailed = ref(false)
+
+const SHOWCASE_TEAMS = [
+  { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 26, odc: 2, totalInstalled: 28 },
+  { id: 3, name: 'Tim 3', pic: 'Tyo', odp: 24, odc: 3, totalInstalled: 27 },
+  { id: 2, name: 'Tim 2', pic: 'Dappa', odp: 20, odc: 1, totalInstalled: 21 },
+  { id: 4, name: 'Tim 4', pic: 'Baim', odp: 4, odc: 1, totalInstalled: 5 }
+]
 
 export function useDashboard() {
   const TARGET_ODP = 365
@@ -13,9 +22,15 @@ export function useDashboard() {
       const res = await fetch('/api/logs')
       if (res.ok) {
         logs.value = await res.json()
+        fetchLogsFailed.value = false
+      } else {
+        fetchLogsFailed.value = true
       }
     } catch (e) {
+      fetchLogsFailed.value = true
       console.error('Failed to fetch logs:', e)
+    } finally {
+      hasFetchedLogs.value = true
     }
   }
 
@@ -67,7 +82,18 @@ export function useDashboard() {
     }
   }
 
+  const emptyTeams = [
+    { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 0, odc: 0, totalInstalled: 0 },
+    { id: 2, name: 'Tim 2', pic: 'Dappa', odp: 0, odc: 0, totalInstalled: 0 },
+    { id: 3, name: 'Tim 3', pic: 'Tyo', odp: 0, odc: 0, totalInstalled: 0 },
+    { id: 4, name: 'Tim 4', pic: 'Baim', odp: 0, odc: 0, totalInstalled: 0 }
+  ]
+
   const teamTotals = computed(() => {
+    if (!logs.value.length) {
+      return fetchLogsFailed.value ? emptyTeams : [...SHOWCASE_TEAMS].sort((a, b) => a.id - b.id)
+    }
+
     const totals = [
       { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 0, odc: 0 },
       { id: 2, name: 'Tim 2', pic: 'Dappa', odp: 0, odc: 0 },
@@ -91,6 +117,23 @@ export function useDashboard() {
   })
 
   const teamRankings = computed(() => {
+    if (!logs.value.length) {
+      const sourceTeams = fetchLogsFailed.value ? emptyTeams : SHOWCASE_TEAMS
+
+      return sourceTeams.map((team, index, arr) => ({
+        ...team,
+        rank: index + 1,
+        previousRank: index + 1,
+        rankChange: 0,
+        trendDelta: 0,
+        currentDaily: 0,
+        previousDaily: 0,
+        badges: [],
+        gapToAbove: index > 0 ? arr[index - 1].totalInstalled - team.totalInstalled : 0,
+        leadOverNext: index < arr.length - 1 ? team.totalInstalled - arr[index + 1].totalInstalled : 0
+      }))
+    }
+
     const teamKeys = ['tim1', 'tim2', 'tim3', 'tim4']
 
     const latestLog = logs.value[logs.value.length - 1] ?? null
@@ -222,6 +265,30 @@ export function useDashboard() {
   const remainingOdc = computed(() => Math.max(TARGET_ODC - totalOdc.value, 0))
 
   const chartData = computed(() => {
+    if (!logs.value.length) {
+      if (fetchLogsFailed.value) {
+        return {
+          labels: [],
+          odpData: [],
+          odcData: []
+        }
+      }
+
+      const showcaseTotals = [...SHOWCASE_TEAMS]
+        .sort((a, b) => a.id - b.id)
+        .reduce((acc, team) => {
+          acc.odp += team.odp
+          acc.odc += team.odc
+          return acc
+        }, { odp: 0, odc: 0 })
+
+      return {
+        labels: ['Data Lokal'],
+        odpData: [showcaseTotals.odp],
+        odcData: [showcaseTotals.odc]
+      }
+    }
+
     const labels = logs.value.map(log => log.date)
     const odpData = []
     const odcData = []
@@ -271,6 +338,8 @@ export function useDashboard() {
     TOTAL_TARGET,
     TOTAL_DAYS,
     logs,
+    hasFetchedLogs,
+    fetchLogsFailed,
     augmentedLogs,
     teamTotals,
     teamRankings,
