@@ -5,12 +5,20 @@ import { LayoutDashboard, FileSpreadsheet } from 'lucide-vue-next'
 
 const route = useRoute()
 const isDashboardRoute = computed(() => route.path === '/')
+const isCrudRoute = computed(() => route.path === '/crud')
 </script>
 
 <template>
   <div
     class="app-shell min-h-screen pb-12 selection:bg-blue-300/30"
-    :class="isDashboardRoute ? 'text-slate-100 selection:text-white' : 'text-slate-900 selection:text-slate-900'"
+    :class="[
+      isDashboardRoute
+        ? 'text-slate-100 selection:text-white'
+        : 'text-slate-900 selection:text-slate-900',
+      isCrudRoute
+        ? 'bg-[linear-gradient(180deg,_#f6f9ff_0%,_#eef4ff_42%,_#f8fbff_100%)]'
+        : ''
+    ]"
   >
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <template v-if="isDashboardRoute">
@@ -96,7 +104,13 @@ const isDashboardRoute = computed(() => route.path === '/')
       </div>
     </header>
 
-    <main :class="isDashboardRoute ? 'mx-auto mt-5 max-w-[1480px] px-3 sm:px-4 lg:px-5' : 'mx-auto mt-8 max-w-7xl px-4 sm:px-6 lg:px-8'">
+    <main
+      :class="
+        isDashboardRoute
+          ? 'mx-auto mt-5 max-w-[1480px] px-3 sm:px-4 lg:px-5'
+          : 'mx-auto mt-8 max-w-7xl px-4 sm:px-6 lg:px-8'
+      "
+    >
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
