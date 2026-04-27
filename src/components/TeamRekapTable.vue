@@ -20,12 +20,15 @@ const percentNumber = (value, target) => {
 
 const grandTotalOdp = computed(() => props.teamTotals.reduce((s, t) => s + t.odp, 0))
 const grandTotalOdc = computed(() => props.teamTotals.reduce((s, t) => s + t.odc, 0))
+const grandTargetInstalled = computed(() => props.targetOdp + props.targetOdc)
 
 const enrichedTeams = computed(() =>
   props.teamTotals.map((team, index) => ({
     ...team,
     rank: index + 1,
-    totalInstalled: team.odp + team.odc
+    totalInstalled: team.odp + team.odc,
+    completionPercent: formatPercent(team.odp + team.odc, grandTargetInstalled.value),
+    completionWidth: percentNumber(team.odp + team.odc, grandTargetInstalled.value)
   }))
 )
 </script>
@@ -79,8 +82,17 @@ const enrichedTeams = computed(() =>
         <div class="team-row__main">
           <div class="team-badge">T{{ team.rank }}</div>
           <div>
-            <h4 class="team-row__title">{{ team.name }}</h4>
+            <div class="team-row__title-wrap">
+              <h4 class="team-row__title">{{ team.name }}</h4>
+              <span class="team-row__percent">{{ team.completionPercent }}</span>
+            </div>
             <p class="team-row__subtitle">{{ team.pic }}</p>
+            <div class="team-row__overall">
+              <div class="team-row__overall-bar">
+                <div class="team-row__overall-fill" :style="{ width: `${team.completionWidth}%` }"></div>
+              </div>
+              <span>Progress tim</span>
+            </div>
           </div>
         </div>
 
@@ -284,10 +296,55 @@ const enrichedTeams = computed(() =>
   color: #ffffff;
 }
 
+.team-row__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.team-row__percent {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(27, 78, 170, 0.72);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #dcebff;
+}
+
 .team-row__subtitle {
   margin-top: 0.2rem;
   font-size: 0.8rem;
   color: rgba(206, 221, 249, 0.76);
+}
+
+.team-row__overall {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.team-row__overall span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(189, 210, 246, 0.72);
+}
+
+.team-row__overall-bar {
+  height: 0.4rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(135, 164, 219, 0.14);
+}
+
+.team-row__overall-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #46a0ff 0%, #8f5bff 100%);
 }
 
 .team-row__metrics {
