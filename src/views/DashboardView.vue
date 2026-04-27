@@ -25,6 +25,8 @@ const {
   teamRankings
 } = useDashboard()
 
+const TOTAL_REWARD = 20000000
+
 const latestLog = computed(() => logs.value[logs.value.length - 1] ?? null)
 
 const latestDateLabel = computed(() => {
@@ -162,6 +164,7 @@ const latestTimeLabel = computed(() => {
           :team-totals="teamTotals"
           :target-odp="TARGET_ODP"
           :target-odc="TARGET_ODC"
+          :total-reward="TOTAL_REWARD"
         />
       </div>
 
