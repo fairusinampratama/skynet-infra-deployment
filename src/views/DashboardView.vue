@@ -131,7 +131,11 @@ const latestTimeLabel = computed(() => {
         </div>
 
         <div class="relative mt-3 md:mt-4">
-          <TeamRankingBoard :team-rankings="teamRankings" />
+          <TeamRankingBoard
+            :team-rankings="teamRankings"
+            :total-target="TOTAL_TARGET"
+            :total-reward="TOTAL_REWARD"
+          />
         </div>
       </div>
     </section>
@@ -164,7 +168,6 @@ const latestTimeLabel = computed(() => {
           :team-totals="teamTotals"
           :target-odp="TARGET_ODP"
           :target-odc="TARGET_ODC"
-          :total-reward="TOTAL_REWARD"
         />
       </div>
 

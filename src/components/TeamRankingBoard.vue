@@ -1,10 +1,19 @@
 <script setup>
 import { computed } from 'vue'
+import { Banknote } from 'lucide-vue-next'
 
 const props = defineProps({
   teamRankings: {
     type: Array,
     required: true
+  },
+  totalTarget: {
+    type: Number,
+    required: true
+  },
+  totalReward: {
+    type: Number,
+    default: 20000000
   }
 })
 
@@ -22,6 +31,17 @@ const fourthPlace = computed(() => rankMap.value.get(4) ?? null)
 const leaderScore = computed(() => Math.max(firstPlace.value?.totalInstalled ?? 1, 1))
 const progressWidth = (value) => `${Math.max((value / leaderScore.value) * 100, 12)}%`
 const barHeight = (value, step, rank) => `${22 + step * 16 + Math.max(value, 1) * (rank === 1 ? 1.8 : 1.35)}px`
+const formatCurrency = (value) =>
+  new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(value)
+
+const rewardAmount = (team) => {
+  if (!team || !props.totalTarget) return formatCurrency(0)
+  return formatCurrency((team.totalInstalled / props.totalTarget) * props.totalReward)
+}
 </script>
 
 <template>
@@ -49,6 +69,10 @@ const barHeight = (value, step, rank) => `${22 + step * 16 + Math.max(value, 1) 
         <div class="podium-body">
           <p class="team-label">{{ secondPlace.name }}</p>
           <h3 class="team-name">{{ secondPlace.pic }}</h3>
+          <div class="reward-pill">
+            <Banknote :size="15" />
+            <span>{{ rewardAmount(secondPlace) }}</span>
+          </div>
 
           <div class="stat-layout">
             <div>
@@ -101,6 +125,10 @@ const barHeight = (value, step, rank) => `${22 + step * 16 + Math.max(value, 1) 
         <div class="podium-body">
           <p class="team-label">{{ firstPlace.name }}</p>
           <h3 class="team-name team-name--main">{{ firstPlace.pic }}</h3>
+          <div class="reward-pill reward-pill--main">
+            <Banknote :size="16" />
+            <span>{{ rewardAmount(firstPlace) }}</span>
+          </div>
 
           <div class="stat-layout stat-layout--main">
             <div>
@@ -157,6 +185,10 @@ const barHeight = (value, step, rank) => `${22 + step * 16 + Math.max(value, 1) 
         <div class="podium-body">
           <p class="team-label">{{ thirdPlace.name }}</p>
           <h3 class="team-name">{{ thirdPlace.pic }}</h3>
+          <div class="reward-pill">
+            <Banknote :size="15" />
+            <span>{{ rewardAmount(thirdPlace) }}</span>
+          </div>
 
           <div class="stat-layout">
             <div>
@@ -196,6 +228,10 @@ const barHeight = (value, step, rank) => `${22 + step * 16 + Math.max(value, 1) 
           <div>
             <p class="team-label">{{ fourthPlace.name }}</p>
             <h3 class="team-name">{{ fourthPlace.pic }}</h3>
+            <div class="reward-pill reward-pill--mini">
+              <Banknote :size="14" />
+              <span>{{ rewardAmount(fourthPlace) }}</span>
+            </div>
           </div>
           <div class="rank-bubble rank-bubble--silver">#4</div>
         </div>
@@ -480,6 +516,40 @@ const barHeight = (value, step, rank) => `${22 + step * 16 + Math.max(value, 1) 
 
 .team-name--main {
   font-size: 2.6rem;
+}
+
+.reward-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-top: 0.6rem;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid rgba(74, 222, 128, 0.34);
+  background: linear-gradient(180deg, rgba(21, 128, 61, 0.28), rgba(10, 84, 41, 0.44));
+  color: #b9fbcf;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 12px 20px -18px rgba(34, 197, 94, 0.55);
+}
+
+.reward-pill span {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.reward-pill--main {
+  margin-top: 0.75rem;
+  padding: 0.44rem 0.82rem;
+}
+
+.reward-pill--main span {
+  font-size: 0.9rem;
+}
+
+.reward-pill--mini {
+  margin-top: 0.5rem;
 }
 
 .stat-layout {

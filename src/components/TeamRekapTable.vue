@@ -5,8 +5,7 @@ import { BarChart3, RadioTower, ShieldEllipsis, Users } from 'lucide-vue-next'
 const props = defineProps({
   teamTotals: { type: Array, required: true },
   targetOdp: { type: Number, required: true },
-  targetOdc: { type: Number, required: true },
-  totalReward: { type: Number, default: 20000000 }
+  targetOdc: { type: Number, required: true }
 })
 
 const formatPercent = (value, target) => {
@@ -19,13 +18,6 @@ const percentNumber = (value, target) => {
   return Math.min((value / target) * 100, 100)
 }
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0
-  }).format(value)
-
 const grandTotalOdp = computed(() => props.teamTotals.reduce((s, t) => s + t.odp, 0))
 const grandTotalOdc = computed(() => props.teamTotals.reduce((s, t) => s + t.odc, 0))
 const grandTargetInstalled = computed(() => props.targetOdp + props.targetOdc)
@@ -36,8 +28,7 @@ const enrichedTeams = computed(() =>
     rank: index + 1,
     totalInstalled: team.odp + team.odc,
     completionPercent: formatPercent(team.odp + team.odc, grandTargetInstalled.value),
-    completionWidth: percentNumber(team.odp + team.odc, grandTargetInstalled.value),
-    rewardAmount: (percentNumber(team.odp + team.odc, grandTargetInstalled.value) / 100) * props.totalReward
+    completionWidth: percentNumber(team.odp + team.odc, grandTargetInstalled.value)
   }))
 )
 </script>
@@ -126,7 +117,6 @@ const enrichedTeams = computed(() =>
         <div class="team-total-box">
           <p>Total</p>
           <strong>{{ team.totalInstalled }}</strong>
-          <small>{{ formatCurrency(team.rewardAmount) }}</small>
         </div>
       </article>
     </div>
@@ -425,15 +415,6 @@ const enrichedTeams = computed(() =>
   margin-top: 0.3rem;
   font-size: 1.55rem;
   color: #4aa6ff;
-}
-
-.team-total-box small {
-  display: block;
-  margin-top: 0.4rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  line-height: 1.35;
-  color: rgba(220, 231, 255, 0.8);
 }
 
 .team-bar {
