@@ -8,7 +8,7 @@ const SHOWCASE_TEAMS = [
   { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 26, odc: 2, totalInstalled: 28 },
   { id: 3, name: 'Tim 3', pic: 'Tyo', odp: 24, odc: 3, totalInstalled: 27 },
   { id: 2, name: 'Tim 2', pic: 'Dappa', odp: 20, odc: 1, totalInstalled: 21 },
-  { id: 4, name: 'Tim 4', pic: 'Baim', odp: 4, odc: 1, totalInstalled: 5 }
+  { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 4, odc: 1, totalInstalled: 5 }
 ]
 
 export function useDashboard() {
@@ -86,7 +86,7 @@ export function useDashboard() {
     { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 0, odc: 0, totalInstalled: 0 },
     { id: 2, name: 'Tim 2', pic: 'Dappa', odp: 0, odc: 0, totalInstalled: 0 },
     { id: 3, name: 'Tim 3', pic: 'Tyo', odp: 0, odc: 0, totalInstalled: 0 },
-    { id: 4, name: 'Tim 4', pic: 'Baim', odp: 0, odc: 0, totalInstalled: 0 }
+    { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 0, odc: 0, totalInstalled: 0 }
   ]
 
   const teamTotals = computed(() => {
@@ -98,7 +98,7 @@ export function useDashboard() {
       { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 0, odc: 0 },
       { id: 2, name: 'Tim 2', pic: 'Dappa', odp: 0, odc: 0 },
       { id: 3, name: 'Tim 3', pic: 'Tyo', odp: 0, odc: 0 },
-      { id: 4, name: 'Tim 4', pic: 'Baim', odp: 0, odc: 0 }
+      { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 0, odc: 0 }
     ]
     logs.value.forEach(log => {
       totals[0].odp += Number(log.tim1?.odp) || 0

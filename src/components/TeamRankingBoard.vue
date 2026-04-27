@@ -534,7 +534,7 @@ const rewardAmount = (team) => {
 }
 
 .reward-pill span {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 800;
   letter-spacing: 0.01em;
 }
@@ -545,7 +545,7 @@ const rewardAmount = (team) => {
 }
 
 .reward-pill--main span {
-  font-size: 0.9rem;
+  font-size: 1.02rem;
 }
 
 .reward-pill--mini {

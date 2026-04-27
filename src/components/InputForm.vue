@@ -17,7 +17,7 @@ const teams = [
   'Tim 1 (Ridwan)',
   'Tim 2 (Dappa)',
   'Tim 3 (Tyo)',
-  'Tim 4 (Baim)'
+  'Tim 4 (Rafly)'
 ]
 
 const handleSubmit = () => {

@@ -17,7 +17,7 @@ const teamCards = [
   { key: 'tim1', title: 'Tim 1', pic: 'Ridwan' },
   { key: 'tim2', title: 'Tim 2', pic: 'Dappa' },
   { key: 'tim3', title: 'Tim 3', pic: 'Tyo' },
-  { key: 'tim4', title: 'Tim 4', pic: 'Baim' }
+  { key: 'tim4', title: 'Tim 4', pic: 'Rafly' }
 ]
 
 const getInitialState = (date = today) => ({
