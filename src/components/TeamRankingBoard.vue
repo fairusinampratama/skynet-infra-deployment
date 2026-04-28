@@ -28,13 +28,9 @@ const firstPlace = computed(() => rankMap.value.get(1) ?? null)
 const thirdPlace = computed(() => rankMap.value.get(3) ?? null)
 const fourthPlace = computed(() => rankMap.value.get(4) ?? null)
 
-const totalInstalledAllTeams = computed(() =>
-  props.teamRankings.reduce((total, team) => total + (team.totalInstalled ?? 0), 0)
-)
-
 const teamSharePercent = (team) => {
-  if (!team || !totalInstalledAllTeams.value) return 0
-  return Math.round((team.totalInstalled / totalInstalledAllTeams.value) * 100)
+  if (!team || !props.totalTarget) return 0
+  return Math.round((team.totalInstalled / props.totalTarget) * 100)
 }
 
 const circleStyle = (team) => ({ '--percent': `${teamSharePercent(team)}%` })
@@ -87,9 +83,9 @@ const rewardAmount = (team) => {
               <p class="metric-label">Total Instalasi</p>
               <p class="metric-value metric-value--silver">{{ secondPlace.totalInstalled }}</p>
             </div>
-            <div class="team-percent team-percent--silver" :style="circleStyle(secondPlace)" aria-label="Persentase kerja tim">
+            <div class="team-percent team-percent--silver" :style="circleStyle(secondPlace)" aria-label="Persentase capaian tim terhadap target proyek">
               <span>{{ teamSharePercent(secondPlace) }}%</span>
-              <small>Kontribusi</small>
+              <small>Capaian</small>
             </div>
           </div>
 
@@ -140,9 +136,9 @@ const rewardAmount = (team) => {
               <p class="metric-label">Total Instalasi</p>
               <p class="metric-value metric-value--gold">{{ firstPlace.totalInstalled }}</p>
             </div>
-            <div class="team-percent team-percent--gold" :style="circleStyle(firstPlace)" aria-label="Persentase kerja tim">
+            <div class="team-percent team-percent--gold" :style="circleStyle(firstPlace)" aria-label="Persentase capaian tim terhadap target proyek">
               <span>{{ teamSharePercent(firstPlace) }}%</span>
-              <small>Kontribusi</small>
+              <small>Capaian</small>
             </div>
           </div>
 
@@ -197,9 +193,9 @@ const rewardAmount = (team) => {
               <p class="metric-label">Total Instalasi</p>
               <p class="metric-value metric-value--bronze">{{ thirdPlace.totalInstalled }}</p>
             </div>
-            <div class="team-percent team-percent--bronze" :style="circleStyle(thirdPlace)" aria-label="Persentase kerja tim">
+            <div class="team-percent team-percent--bronze" :style="circleStyle(thirdPlace)" aria-label="Persentase capaian tim terhadap target proyek">
               <span>{{ teamSharePercent(thirdPlace) }}%</span>
-              <small>Kontribusi</small>
+              <small>Capaian</small>
             </div>
           </div>
 
@@ -240,9 +236,9 @@ const rewardAmount = (team) => {
             <p class="metric-label">Total Instalasi</p>
             <p class="metric-value metric-value--silver">{{ fourthPlace.totalInstalled }}</p>
           </div>
-          <div class="team-percent team-percent--silver team-percent--mini" :style="circleStyle(fourthPlace)" aria-label="Persentase kerja tim">
+          <div class="team-percent team-percent--silver team-percent--mini" :style="circleStyle(fourthPlace)" aria-label="Persentase capaian tim terhadap target proyek">
             <span>{{ teamSharePercent(fourthPlace) }}%</span>
-            <small>Kontribusi</small>
+            <small>Capaian</small>
           </div>
         </div>
 
