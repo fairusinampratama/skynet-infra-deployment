@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { LayoutDashboard, FileSpreadsheet } from 'lucide-vue-next'
+import SkynetLogo from './components/SkynetLogo.vue'
 
 const route = useRoute()
 const isDashboardRoute = computed(() => route.path === '/')
@@ -48,7 +49,7 @@ const isCrudRoute = computed(() => route.path === '/crud')
         <div class="flex min-h-18 flex-col justify-center gap-4 py-4 md:flex-row md:items-center md:justify-between">
           <div class="flex items-center gap-4">
             <div class="app-logo">
-              <div class="app-logo__core">S</div>
+              <SkynetLogo compact />
             </div>
             <div>
               <p
@@ -136,44 +137,11 @@ const isCrudRoute = computed(() => route.path === '/crud')
 }
 
 .app-logo {
-  position: relative;
   display: flex;
-  height: 3.25rem;
-  width: 3.25rem;
+  height: 3.35rem;
+  width: 3.35rem;
   align-items: center;
   justify-content: center;
-  border-radius: 1.25rem;
-  background:
-    linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(6, 182, 212, 0.18)),
-    linear-gradient(145deg, #1d4ed8, #0f172a);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 18px 30px -18px rgba(29, 78, 216, 0.75);
-}
-
-.app-logo::before,
-.app-logo::after {
-  content: '';
-  position: absolute;
-  inset: 0.35rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.app-logo::after {
-  inset: 0.7rem;
-}
-
-.app-logo__core {
-  display: flex;
-  height: 1.45rem;
-  width: 1.45rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  background: linear-gradient(135deg, #ffffff, #bfdbfe);
-  color: #1d4ed8;
-  font-size: 0.85rem;
-  font-weight: 900;
+  filter: drop-shadow(0 15px 18px rgba(29, 78, 216, 0.42));
 }
 </style>

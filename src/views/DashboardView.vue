@@ -6,6 +6,7 @@ import SummaryCards from '../components/SummaryCards.vue'
 import ProgressCharts from '../components/ProgressCharts.vue'
 import TeamRekapTable from '../components/TeamRekapTable.vue'
 import TeamRankingBoard from '../components/TeamRankingBoard.vue'
+import SkynetLogo from '../components/SkynetLogo.vue'
 
 const {
   TARGET_ODP,
@@ -64,40 +65,7 @@ const latestTimeLabel = computed(() => {
         <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_350px] lg:items-start">
           <div class="flex items-start gap-5 text-white">
             <div class="brand-mark" aria-hidden="true">
-              <svg viewBox="0 0 160 160" class="brand-mark__svg" role="presentation">
-                <defs>
-                  <linearGradient id="outerGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#60e7ff" />
-                    <stop offset="48%" stop-color="#2b68ff" />
-                    <stop offset="100%" stop-color="#9b38ff" />
-                  </linearGradient>
-                  <linearGradient id="innerCore" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#0f1d77" />
-                    <stop offset="52%" stop-color="#1d47d8" />
-                    <stop offset="100%" stop-color="#11184f" />
-                  </linearGradient>
-                  <linearGradient id="cubeFace" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#ffffff" />
-                    <stop offset="100%" stop-color="#dbeafe" />
-                  </linearGradient>
-                  <filter id="logoShadow" x="-30%" y="-30%" width="160%" height="160%">
-                    <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#1d4ed8" flood-opacity="0.35" />
-                  </filter>
-                </defs>
-
-                <g filter="url(#logoShadow)">
-                  <polygon points="80,6 137,39 137,104 80,137 23,104 23,39" fill="url(#outerGlow)" />
-                  <polygon points="80,20 124,46 124,97 80,123 36,97 36,46" fill="#0f1f77" opacity="0.96" />
-                  <polygon points="80,33 112,52 112,90 80,109 48,90 48,52" fill="url(#innerCore)" />
-                  <polygon points="80,26 118,48 118,94 80,116 42,94 42,48" fill="none" stroke="#9ae6ff" stroke-opacity="0.7" stroke-width="2.5" />
-                  <polygon points="80,46 98,56 98,76 80,86 62,76 62,56" fill="url(#cubeFace)" />
-                  <polygon points="80,46 96,55 80,64 64,55" fill="#ffffff" />
-                  <polygon points="64,55 80,64 80,82 64,73" fill="#dbeafe" />
-                  <polygon points="96,55 80,64 80,82 96,73" fill="#bfdbfe" />
-                  <polygon points="80,14 126,41 126,102 80,129 34,102 34,41" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="3" />
-                  <polygon points="80,39 106,54 106,88 80,103 54,88 54,54" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2" />
-                </g>
-              </svg>
+              <SkynetLogo />
             </div>
 
             <div class="brand-copy pt-1">
@@ -314,11 +282,6 @@ const latestTimeLabel = computed(() => {
   flex: none;
   height: 7.15rem;
   width: 7.15rem;
-}
-
-.brand-mark__svg {
-  height: 100%;
-  width: 100%;
 }
 
 .brand-title-wrap {

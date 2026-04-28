@@ -28,9 +28,17 @@ const firstPlace = computed(() => rankMap.value.get(1) ?? null)
 const thirdPlace = computed(() => rankMap.value.get(3) ?? null)
 const fourthPlace = computed(() => rankMap.value.get(4) ?? null)
 
-const leaderScore = computed(() => Math.max(firstPlace.value?.totalInstalled ?? 1, 1))
-const progressWidth = (value) => `${Math.max((value / leaderScore.value) * 100, 12)}%`
-const barHeight = (value, step, rank) => `${22 + step * 16 + Math.max(value, 1) * (rank === 1 ? 1.8 : 1.35)}px`
+const totalInstalledAllTeams = computed(() =>
+  props.teamRankings.reduce((total, team) => total + (team.totalInstalled ?? 0), 0)
+)
+
+const teamSharePercent = (team) => {
+  if (!team || !totalInstalledAllTeams.value) return 0
+  return Math.round((team.totalInstalled / totalInstalledAllTeams.value) * 100)
+}
+
+const circleStyle = (team) => ({ '--percent': `${teamSharePercent(team)}%` })
+
 const formatCurrency = (value) =>
   new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -79,13 +87,10 @@ const rewardAmount = (team) => {
               <p class="metric-label">Total Instalasi</p>
               <p class="metric-value metric-value--silver">{{ secondPlace.totalInstalled }}</p>
             </div>
-            <div class="chart-bars chart-bars--silver">
-              <span v-for="step in 4" :key="`silver-${step}`" class="chart-bars__bar chart-bars__bar--silver" :style="{ height: barHeight(secondPlace.totalInstalled, step, 2) }" />
+            <div class="team-percent team-percent--silver" :style="circleStyle(secondPlace)" aria-label="Persentase kerja tim">
+              <span>{{ teamSharePercent(secondPlace) }}%</span>
+              <small>Kontribusi</small>
             </div>
-          </div>
-
-          <div class="progress-rail">
-            <div class="progress-fill progress-fill--silver" :style="{ width: progressWidth(secondPlace.totalInstalled) }" />
           </div>
 
           <div class="split-stats">
@@ -135,13 +140,10 @@ const rewardAmount = (team) => {
               <p class="metric-label">Total Instalasi</p>
               <p class="metric-value metric-value--gold">{{ firstPlace.totalInstalled }}</p>
             </div>
-            <div class="chart-bars chart-bars--gold">
-              <span v-for="step in 4" :key="`gold-${step}`" class="chart-bars__bar chart-bars__bar--gold" :style="{ height: barHeight(firstPlace.totalInstalled, step, 1) }" />
+            <div class="team-percent team-percent--gold" :style="circleStyle(firstPlace)" aria-label="Persentase kerja tim">
+              <span>{{ teamSharePercent(firstPlace) }}%</span>
+              <small>Kontribusi</small>
             </div>
-          </div>
-
-          <div class="progress-rail">
-            <div class="progress-fill progress-fill--gold" :style="{ width: progressWidth(firstPlace.totalInstalled) }" />
           </div>
 
           <div class="split-stats">
@@ -195,13 +197,10 @@ const rewardAmount = (team) => {
               <p class="metric-label">Total Instalasi</p>
               <p class="metric-value metric-value--bronze">{{ thirdPlace.totalInstalled }}</p>
             </div>
-            <div class="chart-bars chart-bars--bronze">
-              <span v-for="step in 4" :key="`bronze-${step}`" class="chart-bars__bar chart-bars__bar--bronze" :style="{ height: barHeight(thirdPlace.totalInstalled, step, 3) }" />
+            <div class="team-percent team-percent--bronze" :style="circleStyle(thirdPlace)" aria-label="Persentase kerja tim">
+              <span>{{ teamSharePercent(thirdPlace) }}%</span>
+              <small>Kontribusi</small>
             </div>
-          </div>
-
-          <div class="progress-rail">
-            <div class="progress-fill progress-fill--bronze" :style="{ width: progressWidth(thirdPlace.totalInstalled) }" />
           </div>
 
           <div class="split-stats">
@@ -241,13 +240,10 @@ const rewardAmount = (team) => {
             <p class="metric-label">Total Instalasi</p>
             <p class="metric-value metric-value--silver">{{ fourthPlace.totalInstalled }}</p>
           </div>
-          <div class="chart-bars chart-bars--silver chart-bars--mini">
-            <span v-for="step in 3" :key="`mini-${step}`" class="chart-bars__bar chart-bars__bar--silver" :style="{ height: `${22 + step * 15 + Math.max(fourthPlace.totalInstalled, 1) * 3}px` }" />
+          <div class="team-percent team-percent--silver team-percent--mini" :style="circleStyle(fourthPlace)" aria-label="Persentase kerja tim">
+            <span>{{ teamSharePercent(fourthPlace) }}%</span>
+            <small>Kontribusi</small>
           </div>
-        </div>
-
-        <div class="progress-rail">
-          <div class="progress-fill progress-fill--silver" :style="{ width: progressWidth(fourthPlace.totalInstalled) }" />
         </div>
 
         <div class="split-stats">
@@ -554,19 +550,19 @@ const rewardAmount = (team) => {
 
 .stat-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 5.9rem;
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr) 7.6rem;
+  align-items: center;
   gap: 0.8rem;
   margin-top: 0.85rem;
 }
 
 .stat-layout--main {
-  grid-template-columns: minmax(0, 1fr) 6.5rem;
+  grid-template-columns: minmax(0, 1fr) 8.2rem;
   margin-top: 0.95rem;
 }
 
 .stat-layout--mini {
-  grid-template-columns: minmax(0, 1fr) 4rem;
+  grid-template-columns: minmax(0, 1fr) 6.3rem;
   margin-top: 0.9rem;
 }
 
@@ -598,122 +594,89 @@ const rewardAmount = (team) => {
   color: #d65b00;
 }
 
-.chart-bars {
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  gap: 0.28rem;
-  min-height: 7.8rem;
-}
-
-.chart-bars--mini {
-  min-height: 4rem;
-}
-
-.chart-bars__bar {
+.team-percent {
+  --accent: #2a72ff;
+  --accent-soft: #9bc0ff;
+  --accent-dark: #143aa8;
   position: relative;
-  width: 1.2rem;
-  min-height: 2rem;
-  border-radius: 0.24rem 0.24rem 0.12rem 0.12rem;
-  box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.62),
-    0 10px 16px -14px rgba(15, 23, 42, 0.4);
-}
-
-.chart-bars__bar::before {
-  content: '';
-  position: absolute;
-  inset: 0.12rem auto 0.12rem 0.08rem;
-  width: 0.16rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.chart-bars__bar::after {
-  content: '';
-  position: absolute;
-  top: 0.22rem;
-  right: -0.32rem;
-  bottom: 0;
-  width: 0.34rem;
-  transform: skewY(42deg);
-  transform-origin: left bottom;
-  border-radius: 0 0.12rem 0.08rem 0;
-  opacity: 0.7;
-}
-
-.chart-bars__bar--silver {
-  background: linear-gradient(180deg, #9bc0ff 0%, #4f8cff 56%, #1a4dcf 100%);
-}
-
-.chart-bars__bar--silver::after {
-  background: linear-gradient(180deg, #4d88ff 0%, #1b49bd 100%);
-}
-
-.chart-bars__bar--gold {
-  background: linear-gradient(180deg, #ffe279 0%, #ffc014 58%, #e18800 100%);
-}
-
-.chart-bars__bar--gold::after {
-  background: linear-gradient(180deg, #ffc83f 0%, #d47c00 100%);
-}
-
-.chart-bars__bar--bronze {
-  background: linear-gradient(180deg, #ffbe6f 0%, #ff8419 58%, #d25700 100%);
-}
-
-.chart-bars__bar--bronze::after {
-  background: linear-gradient(180deg, #ff9530 0%, #c94c00 100%);
-}
-
-.progress-rail {
-  position: relative;
-  margin-top: 0.82rem;
-  height: 0.82rem;
-  overflow: hidden;
+  display: grid;
+  height: 7.35rem;
+  width: 7.35rem;
+  place-items: center;
+  justify-self: end;
   border-radius: 9999px;
-  background: linear-gradient(180deg, #f0ede6 0%, #d9d9d7 100%);
+  background:
+    radial-gradient(circle at center, rgba(4, 13, 33, 0.96) 0 55%, rgba(4, 13, 33, 0) 56%),
+    conic-gradient(var(--accent) var(--percent), rgba(226, 235, 250, 0.16) 0);
   box-shadow:
-    inset 0 2px 4px rgba(100, 116, 139, 0.2),
-    inset 0 -1px 1px rgba(255, 255, 255, 0.68);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 16px 26px -24px var(--accent);
 }
 
-.progress-rail::before {
+.team-percent::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0) 44%);
-  pointer-events: none;
-}
-
-.progress-fill {
-  position: relative;
-  height: 100%;
+  inset: 0.48rem;
   border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    inset 0 0 0 0.42rem rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  right: -0.35rem;
-  top: 50%;
-  height: 1.15rem;
-  width: 1.15rem;
-  transform: translateY(-50%);
-  border-radius: 9999px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0));
+.team-percent span,
+.team-percent small {
+  position: relative;
+  z-index: 1;
 }
 
-.progress-fill--silver {
-  background: linear-gradient(90deg, #1f4fda 0%, #2a72ff 60%, #8fc6ff 100%);
+.team-percent span {
+  margin-top: 0.18rem;
+  color: #f8fbff;
+  font-size: 1.72rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
-.progress-fill--gold {
-  background: linear-gradient(90deg, #f7aa00 0%, #f7c600 60%, #ffe46d 100%);
+.team-percent small {
+  margin-top: -1.25rem;
+  color: rgba(226, 235, 250, 0.72);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
-.progress-fill--bronze {
-  background: linear-gradient(90deg, #e06100 0%, #ff8620 60%, #ffbd6c 100%);
+.team-percent--silver {
+  --accent: #2a72ff;
+  --accent-soft: #9bc0ff;
+  --accent-dark: #143aa8;
+}
+
+.team-percent--gold {
+  --accent: #f7b500;
+  --accent-soft: #ffe279;
+  --accent-dark: #b96a00;
+}
+
+.team-percent--bronze {
+  --accent: #ff8419;
+  --accent-soft: #ffbe6f;
+  --accent-dark: #b95800;
+}
+
+.team-percent--mini {
+  height: 6rem;
+  width: 6rem;
+}
+
+.team-percent--mini span {
+  font-size: 1.35rem;
+}
+
+.team-percent--mini small {
+  font-size: 0.48rem;
 }
 
 .split-stats {
