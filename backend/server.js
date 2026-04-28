@@ -3,6 +3,7 @@ import cors from 'cors'
 import sqlite3 from 'sqlite3'
 import fs from 'fs'
 import path from 'path'
+import { spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
 import 'dotenv/config'
 
@@ -13,6 +14,26 @@ const app = express()
 const PORT = process.env.PORT || 3000
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'database.sqlite')
 const ADMIN_PIN = process.env.ADMIN_PIN || '1234'
+const distPath = path.join(__dirname, '../dist')
+
+const ensureFrontendBuild = () => {
+  const indexPath = path.join(distPath, 'index.html')
+  if (fs.existsSync(indexPath)) return true
+
+  console.log('Frontend build not found. Running npm run build...')
+  const result = spawnSync('npm', ['run', 'build'], {
+    cwd: path.join(__dirname, '..'),
+    shell: process.platform === 'win32',
+    stdio: 'inherit'
+  })
+
+  if (result.status !== 0) {
+    console.error('Frontend build failed. Static dashboard will not be available.')
+    return false
+  }
+
+  return fs.existsSync(indexPath)
+}
 
 app.use(cors())
 app.use(express.json())
@@ -95,8 +116,7 @@ app.delete('/api/logs/:id', (req, res) => {
 // ============================================
 // Static File Serving (for Production)
 // ============================================
-const distPath = path.join(__dirname, '../dist')
-if (fs.existsSync(distPath)) {
+if (ensureFrontendBuild()) {
   console.log(`Serving static files from ${distPath}`)
   
   // Serve static files
@@ -112,7 +132,7 @@ if (fs.existsSync(distPath)) {
     }
   })
 } else {
-  console.log('Running in dev mode. Use Vite (npm run dev) to serve the frontend.')
+  console.log('Running API only. Use Vite (npm run dev) to serve the frontend.')
 }
 
 app.listen(PORT, '0.0.0.0', () => {
