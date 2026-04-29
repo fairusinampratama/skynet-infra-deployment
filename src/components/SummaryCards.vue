@@ -19,6 +19,7 @@ const remainingTotal = computed(() => props.remainingOdp + props.remainingOdc);
 const progressWidth = computed(() => Math.min(Math.max(props.progress, 0), 100));
 const installedRatioLabel = computed(() => `${props.installed} / ${props.target}`);
 const statusLabel = computed(() => (props.daysRemaining <= 7 ? "Mepet" : "On Track"));
+const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 </script>
 
 <template>
@@ -142,7 +143,7 @@ const statusLabel = computed(() => (props.daysRemaining <= 7 ? "Mepet" : "On Tra
       </div>
       <div class="kpi-status-box">
         <p class="kpi-mini-label">Status</p>
-        <div class="kpi-pill">{{ statusLabel }}</div>
+        <div class="kpi-pill" :class="{ 'kpi-pill--urgent': isUrgentStatus }">{{ statusLabel }}</div>
       </div>
     </article>
 
@@ -533,6 +534,13 @@ const statusLabel = computed(() => (props.daysRemaining <= 7 ? "Mepet" : "On Tra
 .kpi-card--amber .kpi-pill {
   margin-top: 0.35rem;
   align-self: flex-start;
+}
+
+.kpi-pill--urgent {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.96), rgba(153, 27, 27, 0.96));
+  border-color: rgba(248, 113, 113, 0.46);
+  color: #fff5f5;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.22);
 }
 
 .kpi-card--blue .kpi-stack-item,
