@@ -27,6 +27,16 @@ const secondPlace = computed(() => rankMap.value.get(2) ?? null)
 const firstPlace = computed(() => rankMap.value.get(1) ?? null)
 const thirdPlace = computed(() => rankMap.value.get(3) ?? null)
 const fourthPlace = computed(() => rankMap.value.get(4) ?? null)
+const PENALTY_RATE = 0.1
+
+const totalInstalled = computed(() =>
+  props.teamRankings.reduce((sum, team) => sum + (Number(team.totalInstalled) || 0), 0)
+)
+const isTargetReached = computed(() => totalInstalled.value >= props.totalTarget)
+const effectiveReward = computed(() =>
+  isTargetReached.value ? props.totalReward : props.totalReward * (1 - PENALTY_RATE)
+)
+const penaltyLabel = computed(() => (isTargetReached.value ? 'Reward penuh' : 'Punishment 10%'))
 
 const teamSharePercent = (team) => {
   if (!team || !props.totalTarget) return 0
@@ -44,7 +54,7 @@ const formatCurrency = (value) =>
 
 const rewardAmount = (team) => {
   if (!team || !props.totalTarget) return formatCurrency(0)
-  return formatCurrency((team.totalInstalled / props.totalTarget) * props.totalReward)
+  return formatCurrency((team.totalInstalled / props.totalTarget) * effectiveReward.value)
 }
 </script>
 
@@ -77,6 +87,7 @@ const rewardAmount = (team) => {
             <Banknote :size="15" />
             <span>{{ rewardAmount(secondPlace) }}</span>
           </div>
+          <p class="penalty-note">{{ penaltyLabel }}</p>
 
           <div class="stat-layout">
             <div>
@@ -130,6 +141,7 @@ const rewardAmount = (team) => {
             <Banknote :size="16" />
             <span>{{ rewardAmount(firstPlace) }}</span>
           </div>
+          <p class="penalty-note penalty-note--main">{{ penaltyLabel }}</p>
 
           <div class="stat-layout stat-layout--main">
             <div>
@@ -187,6 +199,7 @@ const rewardAmount = (team) => {
             <Banknote :size="15" />
             <span>{{ rewardAmount(thirdPlace) }}</span>
           </div>
+          <p class="penalty-note">{{ penaltyLabel }}</p>
 
           <div class="stat-layout">
             <div>
@@ -227,6 +240,7 @@ const rewardAmount = (team) => {
               <Banknote :size="14" />
               <span>{{ rewardAmount(fourthPlace) }}</span>
             </div>
+            <p class="penalty-note">{{ penaltyLabel }}</p>
           </div>
           <div class="rank-bubble rank-bubble--silver">#4</div>
         </div>
@@ -542,6 +556,19 @@ const rewardAmount = (team) => {
 
 .reward-pill--mini {
   margin-top: 0.5rem;
+}
+
+.penalty-note {
+  margin-top: 0.34rem;
+  color: #ffb4b4;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.penalty-note--main {
+  font-size: 0.76rem;
 }
 
 .stat-layout {
