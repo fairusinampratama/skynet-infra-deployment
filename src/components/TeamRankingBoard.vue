@@ -7,6 +7,10 @@ const props = defineProps({
     type: Array,
     required: true
   },
+  nonRankingTeams: {
+    type: Array,
+    default: () => []
+  },
   totalTarget: {
     type: Number,
     required: true
@@ -30,7 +34,8 @@ const fourthPlace = computed(() => rankMap.value.get(4) ?? null)
 const PENALTY_RATE = 0.1
 
 const totalInstalled = computed(() =>
-  props.teamRankings.reduce((sum, team) => sum + (Number(team.totalInstalled) || 0), 0)
+  [...props.teamRankings, ...props.nonRankingTeams]
+    .reduce((sum, team) => sum + (Number(team.totalInstalled) || 0), 0)
 )
 const isTargetReached = computed(() => totalInstalled.value >= props.totalTarget)
 const effectiveReward = computed(() =>
@@ -228,8 +233,8 @@ const rewardAmount = (team) => {
       </article>
     </div>
 
-    <div v-if="fourthPlace" class="mini-card-wrap">
-      <article class="mini-card">
+    <div v-if="fourthPlace || nonRankingTeams.length" class="mini-card-row">
+      <article v-if="fourthPlace" class="mini-card">
         <div class="podium-card__glow" />
         <div class="podium-card__shine" />
         <div class="mini-card__head">
@@ -264,6 +269,43 @@ const rewardAmount = (team) => {
           <div class="split-stats__item">
             <p class="split-stats__label split-stats__label--odc">ODC</p>
             <p class="split-stats__value">{{ fourthPlace.odc }}</p>
+          </div>
+        </div>
+      </article>
+
+      <article v-for="team in nonRankingTeams" :key="team.id" class="mini-card mini-card--neutral">
+        <div class="podium-card__glow" />
+        <div class="podium-card__shine" />
+        <div class="mini-card__head">
+          <div>
+            <p class="team-label">{{ team.name }}</p>
+            <h3 class="team-name">{{ team.pic }}</h3>
+            <div class="reward-pill reward-pill--mini reward-pill--neutral">
+              <span>Non Peringkat</span>
+            </div>
+          </div>
+          <div class="rank-bubble rank-bubble--neutral">NP</div>
+        </div>
+
+        <div class="stat-layout stat-layout--mini">
+          <div>
+            <p class="metric-label">Total Instalasi</p>
+            <p class="metric-value metric-value--neutral">{{ team.totalInstalled }}</p>
+          </div>
+          <div class="team-percent team-percent--neutral team-percent--mini" :style="circleStyle(team)" aria-label="Persentase capaian tim terhadap target proyek">
+            <span>{{ teamSharePercent(team) }}%</span>
+            <small>Capaian</small>
+          </div>
+        </div>
+
+        <div class="split-stats">
+          <div class="split-stats__item">
+            <p class="split-stats__label split-stats__label--odp">ODP</p>
+            <p class="split-stats__value">{{ team.odp }}</p>
+          </div>
+          <div class="split-stats__item">
+            <p class="split-stats__label split-stats__label--odc">ODC</p>
+            <p class="split-stats__value">{{ team.odc }}</p>
           </div>
         </div>
       </article>
@@ -796,10 +838,12 @@ const rewardAmount = (team) => {
   text-shadow: 0 0 12px rgba(255, 243, 173, 0.52);
 }
 
-.mini-card-wrap {
+.mini-card-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1rem;
   margin-top: 0.78rem;
-  width: 29.1%;
-  min-width: 20rem;
+  width: 59.5%;
 }
 
 .mini-card {
@@ -807,6 +851,34 @@ const rewardAmount = (team) => {
   background:
     radial-gradient(circle at 18% 12%, rgba(96, 165, 250, 0.16), rgba(219, 234, 254, 0) 20%),
     linear-gradient(180deg, rgba(6, 22, 56, 0.98), rgba(4, 14, 38, 0.98));
+}
+
+.mini-card--neutral {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(45, 212, 191, 0.14), rgba(219, 234, 254, 0) 20%),
+    linear-gradient(180deg, rgba(5, 38, 48, 0.98), rgba(4, 20, 32, 0.98));
+}
+
+.rank-bubble--neutral {
+  background: linear-gradient(180deg, #d9fff9 0%, #73e2d5 100%);
+  color: #07545b;
+  border: 1px solid rgba(94, 234, 212, 0.72);
+}
+
+.reward-pill--neutral {
+  border-color: rgba(94, 234, 212, 0.34);
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.28), rgba(17, 94, 89, 0.44));
+  color: #b8fff6;
+}
+
+.metric-value--neutral {
+  color: #22c7b8;
+}
+
+.team-percent--neutral {
+  --accent: #14b8a6;
+  --accent-soft: #99f6e4;
+  --accent-dark: #0f766e;
 }
 
 @media (max-width: 1180px) {
@@ -825,9 +897,8 @@ const rewardAmount = (team) => {
     transform: none;
   }
 
-  .mini-card-wrap {
+  .mini-card-row {
     width: 100%;
-    min-width: 0;
   }
 }
 

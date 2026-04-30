@@ -46,6 +46,7 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
             <th class="head-group" colspan="2">Tim 2</th>
             <th class="head-group" colspan="2">Tim 3</th>
             <th class="head-group" colspan="2">Tim 4</th>
+            <th class="head-group" colspan="2">Tim 5</th>
             <th class="head-group head-group--blue" colspan="2">Total Harian</th>
             <th class="head-group head-group--deep" colspan="2">Akumulasi</th>
             <th class="head-group head-group--green" colspan="2">Progress</th>
@@ -53,6 +54,8 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
             <th rowspan="2">Aksi</th>
           </tr>
           <tr>
+            <th>ODP</th>
+            <th>ODC</th>
             <th>ODP</th>
             <th>ODC</th>
             <th>ODP</th>
@@ -72,7 +75,7 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
 
         <tbody>
           <tr v-if="logs.length === 0">
-            <td colspan="18" class="logs-empty">
+            <td colspan="20" class="logs-empty">
               Belum ada data riwayat
             </td>
           </tr>
@@ -88,6 +91,8 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
             <td :class="(!log.tim3?.odc || log.tim3.odc === 0) ? 'muted' : 'violet'">{{ log.tim3?.odc || 0 }}</td>
             <td :class="(!log.tim4?.odp || log.tim4.odp === 0) ? 'muted' : 'blue'">{{ log.tim4?.odp || 0 }}</td>
             <td :class="(!log.tim4?.odc || log.tim4.odc === 0) ? 'muted' : 'violet'">{{ log.tim4?.odc || 0 }}</td>
+            <td :class="(!log.tim5?.odp || log.tim5.odp === 0) ? 'muted' : 'blue'">{{ log.tim5?.odp || 0 }}</td>
+            <td :class="(!log.tim5?.odc || log.tim5.odc === 0) ? 'muted' : 'violet'">{{ log.tim5?.odc || 0 }}</td>
             <td class="metric-blue">{{ log.dailyOdp }}</td>
             <td class="metric-violet">{{ log.dailyOdc }}</td>
             <td class="metric-deep-blue">{{ log.accOdp }}</td>
@@ -163,7 +168,7 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
 
 .logs-table {
   width: 100%;
-  min-width: 1180px;
+  min-width: 1320px;
   border-collapse: separate;
   border-spacing: 0;
   color: #d9e7ff;

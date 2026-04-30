@@ -4,17 +4,26 @@ const logs = ref([])
 const hasFetchedLogs = ref(false)
 const fetchLogsFailed = ref(false)
 
+const TEAM_CONFIG = [
+  { id: 1, key: 'tim1', name: 'Tim 1', pic: 'Riduwan', baseOdp: 0, baseOdc: 0, rankingEligible: true },
+  { id: 2, key: 'tim2', name: 'Tim 2', pic: 'Daffa', baseOdp: 0, baseOdc: 0, rankingEligible: true },
+  { id: 3, key: 'tim3', name: 'Tim 3', pic: 'Mr. Sukun', baseOdp: 0, baseOdc: 0, rankingEligible: true },
+  { id: 4, key: 'tim4', name: 'Tim 4', pic: 'Rafly', baseOdp: 0, baseOdc: 0, rankingEligible: true },
+  { id: 5, key: 'tim5', name: 'Tim 5', pic: 'Mr.X', baseOdp: 95, baseOdc: 11, rankingEligible: false }
+]
+
 const SHOWCASE_TEAMS = [
   { id: 1, name: 'Tim 1', pic: 'Riduwan', odp: 26, odc: 2, totalInstalled: 28 },
   { id: 3, name: 'Tim 3', pic: 'Mr. Sukun', odp: 24, odc: 3, totalInstalled: 27 },
   { id: 2, name: 'Tim 2', pic: 'Daffa', odp: 20, odc: 1, totalInstalled: 21 },
-  { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 4, odc: 1, totalInstalled: 5 }
+  { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 4, odc: 1, totalInstalled: 5 },
+  { id: 5, name: 'Tim 5', pic: 'Mr.X', odp: 95, odc: 11, totalInstalled: 106, rankingEligible: false }
 ]
 
 export function useDashboard() {
-  const TARGET_ODP = 365
-  const TARGET_ODC = 46
-  const TOTAL_TARGET = 411
+  const TARGET_ODP = 460
+  const TARGET_ODC = 57
+  const TOTAL_TARGET = 517
   const TOTAL_DAYS = 12
 
   const fetchLogs = async () => {
@@ -82,33 +91,35 @@ export function useDashboard() {
     }
   }
 
-  const emptyTeams = [
-    { id: 1, name: 'Tim 1', pic: 'Riduwan', odp: 0, odc: 0, totalInstalled: 0 },
-    { id: 2, name: 'Tim 2', pic: 'Daffa', odp: 0, odc: 0, totalInstalled: 0 },
-    { id: 3, name: 'Tim 3', pic: 'Mr. Sukun', odp: 0, odc: 0, totalInstalled: 0 },
-    { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 0, odc: 0, totalInstalled: 0 }
-  ]
+  const emptyTeams = TEAM_CONFIG.map((team) => ({
+    id: team.id,
+    name: team.name,
+    pic: team.pic,
+    odp: team.baseOdp,
+    odc: team.baseOdc,
+    totalInstalled: team.baseOdp + team.baseOdc,
+    rankingEligible: team.rankingEligible
+  }))
 
   const teamTotals = computed(() => {
     if (!logs.value.length) {
       return fetchLogsFailed.value ? emptyTeams : [...SHOWCASE_TEAMS].sort((a, b) => a.id - b.id)
     }
 
-    const totals = [
-      { id: 1, name: 'Tim 1', pic: 'Riduwan', odp: 0, odc: 0 },
-      { id: 2, name: 'Tim 2', pic: 'Daffa', odp: 0, odc: 0 },
-      { id: 3, name: 'Tim 3', pic: 'Mr. Sukun', odp: 0, odc: 0 },
-      { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 0, odc: 0 }
-    ]
+    const totals = TEAM_CONFIG.map((team) => ({
+      id: team.id,
+      name: team.name,
+      pic: team.pic,
+      odp: team.baseOdp,
+      odc: team.baseOdc,
+      rankingEligible: team.rankingEligible
+    }))
+
     logs.value.forEach(log => {
-      totals[0].odp += Number(log.tim1?.odp) || 0
-      totals[0].odc += Number(log.tim1?.odc) || 0
-      totals[1].odp += Number(log.tim2?.odp) || 0
-      totals[1].odc += Number(log.tim2?.odc) || 0
-      totals[2].odp += Number(log.tim3?.odp) || 0
-      totals[2].odc += Number(log.tim3?.odc) || 0
-      totals[3].odp += Number(log.tim4?.odp) || 0
-      totals[3].odc += Number(log.tim4?.odc) || 0
+      TEAM_CONFIG.forEach((team, index) => {
+        totals[index].odp += Number(log[team.key]?.odp) || 0
+        totals[index].odc += Number(log[team.key]?.odc) || 0
+      })
     })
     return totals.map((team) => ({
       ...team,
@@ -118,7 +129,8 @@ export function useDashboard() {
 
   const teamRankings = computed(() => {
     if (!logs.value.length) {
-      const sourceTeams = fetchLogsFailed.value ? emptyTeams : SHOWCASE_TEAMS
+      const sourceTeams = (fetchLogsFailed.value ? emptyTeams : SHOWCASE_TEAMS)
+        .filter((team) => team.rankingEligible !== false)
 
       return sourceTeams.map((team, index, arr) => ({
         ...team,
@@ -134,17 +146,18 @@ export function useDashboard() {
       }))
     }
 
-    const teamKeys = ['tim1', 'tim2', 'tim3', 'tim4']
+    const rankingTeamTotals = teamTotals.value.filter((team) => team.rankingEligible !== false)
+    const rankingTeamConfig = TEAM_CONFIG.filter((team) => team.rankingEligible !== false)
+    const teamKeys = rankingTeamConfig.map((team) => team.key)
 
     const latestLog = logs.value[logs.value.length - 1] ?? null
     const previousLog = logs.value[logs.value.length - 2] ?? null
 
-    const previousTotals = [
-      { totalInstalled: 0, odp: 0, odc: 0 },
-      { totalInstalled: 0, odp: 0, odc: 0 },
-      { totalInstalled: 0, odp: 0, odc: 0 },
-      { totalInstalled: 0, odp: 0, odc: 0 }
-    ]
+    const previousTotals = rankingTeamConfig.map((team) => ({
+      totalInstalled: team.baseOdp + team.baseOdc,
+      odp: team.baseOdp,
+      odc: team.baseOdc
+    }))
 
     logs.value.slice(0, -1).forEach((log) => {
       teamKeys.forEach((key, index) => {
@@ -155,7 +168,7 @@ export function useDashboard() {
       })
     })
 
-    const previousRankingMap = [...teamTotals.value]
+    const previousRankingMap = [...rankingTeamTotals]
       .map((team, index) => ({
         id: team.id,
         name: team.name,
@@ -174,8 +187,8 @@ export function useDashboard() {
         return acc
       }, {})
 
-    const maxOdp = Math.max(...teamTotals.value.map((team) => team.odp), 0)
-    const maxOdc = Math.max(...teamTotals.value.map((team) => team.odc), 0)
+    const maxOdp = Math.max(...rankingTeamTotals.map((team) => team.odp), 0)
+    const maxOdc = Math.max(...rankingTeamTotals.map((team) => team.odc), 0)
 
     const latestDayTotals = teamKeys.map((key) => ({
       totalInstalled: ((Number(latestLog?.[key]?.odp) || 0) + (Number(latestLog?.[key]?.odc) || 0)),
@@ -192,7 +205,7 @@ export function useDashboard() {
     const momentumValues = latestDayTotals.map((team, index) => team.totalInstalled - previousDayTotals[index].totalInstalled)
     const maxMomentum = Math.max(...momentumValues, 0)
 
-    const rankedTeams = [...teamTotals.value]
+    const rankedTeams = [...rankingTeamTotals]
       .sort((a, b) => {
         if (b.totalInstalled !== a.totalInstalled) return b.totalInstalled - a.totalInstalled
         if (b.odp !== a.odp) return b.odp - a.odp
@@ -204,7 +217,7 @@ export function useDashboard() {
       }))
 
     return rankedTeams.map((team) => {
-      const teamIndex = team.id - 1
+      const teamIndex = rankingTeamConfig.findIndex((config) => config.id === team.id)
       const currentDaily = latestDayTotals[teamIndex]?.totalInstalled || 0
       const previousDaily = previousDayTotals[teamIndex]?.totalInstalled || 0
       const trendDelta = currentDaily - previousDaily
@@ -293,12 +306,12 @@ export function useDashboard() {
     const odpData = []
     const odcData = []
     
-    let currentOdp = 0
-    let currentOdc = 0
+    let currentOdp = TEAM_CONFIG.reduce((sum, team) => sum + team.baseOdp, 0)
+    let currentOdc = TEAM_CONFIG.reduce((sum, team) => sum + team.baseOdc, 0)
 
     logs.value.forEach(log => {
-      const dailyOdp = (Number(log.tim1?.odp)||0) + (Number(log.tim2?.odp)||0) + (Number(log.tim3?.odp)||0) + (Number(log.tim4?.odp)||0)
-      const dailyOdc = (Number(log.tim1?.odc)||0) + (Number(log.tim2?.odc)||0) + (Number(log.tim3?.odc)||0) + (Number(log.tim4?.odc)||0)
+      const dailyOdp = TEAM_CONFIG.reduce((sum, team) => sum + (Number(log[team.key]?.odp) || 0), 0)
+      const dailyOdc = TEAM_CONFIG.reduce((sum, team) => sum + (Number(log[team.key]?.odc) || 0), 0)
       
       currentOdp += dailyOdp
       currentOdc += dailyOdc
@@ -310,11 +323,11 @@ export function useDashboard() {
   })
   
   const augmentedLogs = computed(() => {
-    let accOdp = 0
-    let accOdc = 0
+    let accOdp = TEAM_CONFIG.reduce((sum, team) => sum + team.baseOdp, 0)
+    let accOdc = TEAM_CONFIG.reduce((sum, team) => sum + team.baseOdc, 0)
     return logs.value.map((log, index) => {
-      const dailyOdp = (Number(log.tim1?.odp)||0) + (Number(log.tim2?.odp)||0) + (Number(log.tim3?.odp)||0) + (Number(log.tim4?.odp)||0)
-      const dailyOdc = (Number(log.tim1?.odc)||0) + (Number(log.tim2?.odc)||0) + (Number(log.tim3?.odc)||0) + (Number(log.tim4?.odc)||0)
+      const dailyOdp = TEAM_CONFIG.reduce((sum, team) => sum + (Number(log[team.key]?.odp) || 0), 0)
+      const dailyOdc = TEAM_CONFIG.reduce((sum, team) => sum + (Number(log[team.key]?.odc) || 0), 0)
       
       accOdp += dailyOdp
       accOdc += dailyOdc

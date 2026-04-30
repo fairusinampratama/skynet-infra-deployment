@@ -17,7 +17,8 @@ const teamCards = [
   { key: 'tim1', title: 'Tim 1', pic: 'Riduwan' },
   { key: 'tim2', title: 'Tim 2', pic: 'Daffa' },
   { key: 'tim3', title: 'Tim 3', pic: 'Mr. Sukun' },
-  { key: 'tim4', title: 'Tim 4', pic: 'Rafly' }
+  { key: 'tim4', title: 'Tim 4', pic: 'Rafly' },
+  { key: 'tim5', title: 'Tim 5', pic: 'Mr.X' }
 ]
 
 const getInitialState = (date = today) => ({
@@ -26,6 +27,7 @@ const getInitialState = (date = today) => ({
   tim2: { odp: 0, odc: 0 },
   tim3: { odp: 0, odc: 0 },
   tim4: { odp: 0, odc: 0 },
+  tim5: { odp: 0, odc: 0 },
   notes: ''
 })
 
@@ -35,7 +37,10 @@ const isEditMode = ref(false)
 watch(() => formData.value.date, (newDate) => {
   const existingLog = props.logs.find((l) => l.date === newDate)
   if (existingLog) {
-    formData.value = JSON.parse(JSON.stringify(existingLog))
+    formData.value = {
+      ...getInitialState(newDate),
+      ...JSON.parse(JSON.stringify(existingLog))
+    }
     isEditMode.value = true
   } else {
     formData.value = getInitialState(newDate)
@@ -294,7 +299,7 @@ const handleSubmit = () => {
 
 .crud-team-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 1rem;
   margin-bottom: 1.1rem;
 }

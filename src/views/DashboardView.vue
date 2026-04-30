@@ -29,6 +29,7 @@ const {
 const TOTAL_REWARD = 20000000
 
 const latestLog = computed(() => logs.value[logs.value.length - 1] ?? null)
+const nonRankingTeams = computed(() => teamTotals.value.filter((team) => team.rankingEligible === false))
 
 const latestDateLabel = computed(() => {
   if (!latestLog.value?.date) return '24 Mei 2025'
@@ -101,6 +102,7 @@ const latestTimeLabel = computed(() => {
         <div class="relative mt-3 md:mt-4">
           <TeamRankingBoard
             :team-rankings="teamRankings"
+            :non-ranking-teams="nonRankingTeams"
             :total-target="TOTAL_TARGET"
             :total-reward="TOTAL_REWARD"
           />
