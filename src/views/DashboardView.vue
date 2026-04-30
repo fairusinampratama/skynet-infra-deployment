@@ -27,6 +27,7 @@ const {
 } = useDashboard()
 
 const TOTAL_REWARD = 20000000
+const REWARD_TARGET = 365
 
 const latestLog = computed(() => logs.value[logs.value.length - 1] ?? null)
 const nonRankingTeams = computed(() => teamTotals.value.filter((team) => team.rankingEligible === false))
@@ -104,6 +105,7 @@ const latestTimeLabel = computed(() => {
             :team-rankings="teamRankings"
             :non-ranking-teams="nonRankingTeams"
             :total-target="TOTAL_TARGET"
+            :reward-target="REWARD_TARGET"
             :total-reward="TOTAL_REWARD"
           />
         </div>

@@ -15,6 +15,10 @@ const props = defineProps({
     type: Number,
     required: true
   },
+  rewardTarget: {
+    type: Number,
+    default: 365
+  },
   totalReward: {
     type: Number,
     default: 20000000
@@ -36,7 +40,7 @@ const PENALTY_RATE = 0.1
 const totalInstalled = computed(() =>
   props.teamRankings.reduce((sum, team) => sum + (Number(team.totalInstalled) || 0), 0)
 )
-const isTargetReached = computed(() => totalInstalled.value >= props.totalTarget)
+const isTargetReached = computed(() => totalInstalled.value >= props.rewardTarget)
 const effectiveReward = computed(() =>
   isTargetReached.value ? props.totalReward : props.totalReward * (1 - PENALTY_RATE)
 )
@@ -57,8 +61,8 @@ const formatCurrency = (value) =>
   }).format(value)
 
 const rewardAmount = (team) => {
-  if (!team || !props.totalTarget) return formatCurrency(0)
-  return formatCurrency((team.totalInstalled / props.totalTarget) * effectiveReward.value)
+  if (!team || !props.rewardTarget) return formatCurrency(0)
+  return formatCurrency((team.totalInstalled / props.rewardTarget) * effectiveReward.value)
 }
 </script>
 
