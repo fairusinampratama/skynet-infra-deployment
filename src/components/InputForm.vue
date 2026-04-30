@@ -7,14 +7,14 @@ const today = new Date().toISOString().split('T')[0]
 
 const formData = ref({
   date: today,
-  team: 'Tim 1 (Riduan)',
+  team: 'Tim 1 (Riduwan)',
   odp: 0,
   odc: 0,
   notes: ''
 })
 
 const teams = [
-  'Tim 1 (Riduan)',
+  'Tim 1 (Riduwan)',
   'Tim 2 (Daffa)',
   'Tim 3 (Mr. Sukun)',
   'Tim 4 (Rafly)'
