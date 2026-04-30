@@ -319,19 +319,21 @@ const rewardAmount = (team) => {
 <style scoped>
 .rank-showcase {
   position: relative;
-  padding: 0 1.7rem 1.8rem;
+  padding: 0 1.45rem 1.8rem;
 }
 
 .podium-grid {
   display: grid;
-  grid-template-columns: 1fr 1.08fr 1fr;
-  gap: 1.15rem;
-  align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .podium-card,
 .mini-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: 1.9rem;
   border: 1px solid rgba(80, 115, 176, 0.28);
@@ -355,16 +357,14 @@ const rewardAmount = (team) => {
 }
 
 .podium-card {
-  min-height: 28.4rem;
+  min-height: 26.8rem;
 }
 
 .podium-card--main {
-  min-height: 31.4rem;
-  transform: translateY(-0.6rem);
+  min-height: 26.8rem;
 }
 
 .podium-card--silver {
-  margin-top: 2.1rem;
   background:
     radial-gradient(circle at 16% 12%, rgba(96, 165, 250, 0.16), rgba(219, 234, 254, 0) 22%),
     linear-gradient(180deg, rgba(6, 22, 56, 0.98), rgba(4, 14, 38, 0.98));
@@ -382,7 +382,6 @@ const rewardAmount = (team) => {
 }
 
 .podium-card--bronze {
-  margin-top: 2.1rem;
   background:
     radial-gradient(circle at 16% 12%, rgba(255, 143, 40, 0.16), rgba(255, 221, 189, 0) 22%),
     linear-gradient(180deg, rgba(43, 20, 6, 0.98), rgba(24, 11, 6, 0.98));
@@ -550,6 +549,12 @@ const rewardAmount = (team) => {
   padding: 0.88rem 1.08rem 0;
 }
 
+.podium-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
 .team-label {
   font-size: 0.84rem;
   font-weight: 500;
@@ -558,15 +563,15 @@ const rewardAmount = (team) => {
 
 .team-name {
   margin-top: 0.3rem;
-  font-size: 1.95rem;
+  font-size: clamp(1.85rem, 2vw, 2.15rem);
   font-weight: 900;
   line-height: 1;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   color: #f7fbff;
 }
 
 .team-name--main {
-  font-size: 2.6rem;
+  font-size: clamp(2.05rem, 2.25vw, 2.35rem);
 }
 
 .reward-pill {
@@ -618,20 +623,22 @@ const rewardAmount = (team) => {
 
 .stat-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 7.6rem;
+  grid-template-columns: minmax(0, 1fr) 7.1rem;
   align-items: center;
   gap: 0.8rem;
-  margin-top: 0.85rem;
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
 .stat-layout--main {
-  grid-template-columns: minmax(0, 1fr) 8.2rem;
-  margin-top: 0.95rem;
+  grid-template-columns: minmax(0, 1fr) 7.1rem;
+  margin-top: auto;
 }
 
 .stat-layout--mini {
-  grid-template-columns: minmax(0, 1fr) 6.3rem;
-  margin-top: 0.9rem;
+  grid-template-columns: minmax(0, 1fr) 6.9rem;
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
 .metric-label {
@@ -644,10 +651,10 @@ const rewardAmount = (team) => {
 
 .metric-value {
   margin-top: 0.45rem;
-  font-size: 3.15rem;
+  font-size: clamp(2.75rem, 3.4vw, 3.35rem);
   line-height: 1;
   font-weight: 900;
-  letter-spacing: -0.06em;
+  letter-spacing: 0;
 }
 
 .metric-value--silver {
@@ -668,8 +675,8 @@ const rewardAmount = (team) => {
   --accent-dark: #143aa8;
   position: relative;
   display: grid;
-  height: 7.35rem;
-  width: 7.35rem;
+  height: 6.95rem;
+  width: 6.95rem;
   place-items: center;
   justify-self: end;
   border-radius: 9999px;
@@ -701,7 +708,7 @@ const rewardAmount = (team) => {
 .team-percent span {
   margin-top: 0.18rem;
   color: #f8fbff;
-  font-size: 1.72rem;
+  font-size: 1.56rem;
   font-weight: 900;
   line-height: 1;
 }
@@ -735,12 +742,12 @@ const rewardAmount = (team) => {
 }
 
 .team-percent--mini {
-  height: 6rem;
-  width: 6rem;
+  height: 6.35rem;
+  width: 6.35rem;
 }
 
 .team-percent--mini span {
-  font-size: 1.35rem;
+  font-size: 1.42rem;
 }
 
 .team-percent--mini small {
@@ -751,7 +758,7 @@ const rewardAmount = (team) => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.62rem;
-  margin-top: 0.72rem;
+  margin-top: 0.78rem;
   padding-bottom: 0.9rem;
 }
 
@@ -843,14 +850,14 @@ const rewardAmount = (team) => {
 
 .mini-card-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
-  margin-top: 0.78rem;
-  width: 59.5%;
+  margin-top: 1rem;
+  width: calc((100% - 1rem) * 2 / 3 + 1rem);
 }
 
 .mini-card {
-  min-height: 14.6rem;
+  min-height: 21.8rem;
   background:
     radial-gradient(circle at 18% 12%, rgba(96, 165, 250, 0.16), rgba(219, 234, 254, 0) 20%),
     linear-gradient(180deg, rgba(6, 22, 56, 0.98), rgba(4, 14, 38, 0.98));
@@ -890,7 +897,7 @@ const rewardAmount = (team) => {
   }
 
   .podium-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .podium-card--main,
@@ -901,6 +908,7 @@ const rewardAmount = (team) => {
   }
 
   .mini-card-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
   }
 }
@@ -913,6 +921,11 @@ const rewardAmount = (team) => {
   .podium-card,
   .podium-card--main {
     min-height: auto;
+  }
+
+  .podium-grid,
+  .mini-card-row {
+    grid-template-columns: 1fr;
   }
 
   .podium-head,
@@ -930,6 +943,18 @@ const rewardAmount = (team) => {
 
   .metric-value {
     font-size: 2.9rem;
+  }
+
+  .stat-layout,
+  .stat-layout--main,
+  .stat-layout--mini {
+    grid-template-columns: minmax(0, 1fr) 6.2rem;
+  }
+
+  .team-percent,
+  .team-percent--mini {
+    height: 6rem;
+    width: 6rem;
   }
 }
 </style>
