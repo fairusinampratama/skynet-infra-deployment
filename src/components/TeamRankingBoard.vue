@@ -17,7 +17,7 @@ const props = defineProps({
   },
   rewardTarget: {
     type: Number,
-    default: 365
+    default: 411
   },
   totalReward: {
     type: Number,

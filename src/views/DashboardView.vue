@@ -27,7 +27,7 @@ const {
 } = useDashboard()
 
 const TOTAL_REWARD = 20000000
-const REWARD_TARGET = 365
+const REWARD_TARGET = 411
 
 const latestLog = computed(() => logs.value[logs.value.length - 1] ?? null)
 const nonRankingTeams = computed(() => teamTotals.value.filter((team) => team.rankingEligible === false))
