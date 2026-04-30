@@ -331,18 +331,21 @@ const rewardAmount = (team) => {
 
 .podium-card,
 .mini-card {
+  --card-accent: #2a72ff;
+  --card-accent-soft: rgba(96, 165, 250, 0.16);
+  --card-depth: rgba(10, 26, 63, 0.88);
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 1.9rem;
-  border: 1px solid rgba(80, 115, 176, 0.28);
+  border-radius: 1.35rem;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 34%, rgba(80, 115, 176, 0.28));
   background:
-    radial-gradient(circle at 15% 8%, rgba(59, 130, 246, 0.12), rgba(255, 255, 255, 0) 28%),
+    radial-gradient(circle at 15% 8%, var(--card-accent-soft), rgba(255, 255, 255, 0) 28%),
     linear-gradient(180deg, rgba(7, 20, 50, 0.98), rgba(3, 12, 32, 0.98));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 3px 0 rgba(10, 26, 63, 0.88),
+    0 3px 0 var(--card-depth),
     0 18px 34px -24px rgba(2, 6, 23, 0.72);
 }
 
@@ -356,8 +359,31 @@ const rewardAmount = (team) => {
   pointer-events: none;
 }
 
+.podium-card::after,
+.mini-card::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: 1;
+  height: 0.24rem;
+  width: 100%;
+  background: linear-gradient(90deg, transparent 0%, var(--card-accent) 18%, rgba(255, 255, 255, 0.55) 50%, var(--card-accent) 82%, transparent 100%);
+  opacity: 0.82;
+  pointer-events: none;
+}
+
 .podium-card {
   min-height: 26.8rem;
+  border-width: 2px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 4px 0 color-mix(in srgb, var(--card-accent) 44%, rgba(5, 14, 38, 0.9)),
+    0 22px 44px -28px color-mix(in srgb, var(--card-accent) 38%, rgba(2, 6, 23, 0.72));
+}
+
+.podium-card::after {
+  height: 0.42rem;
+  opacity: 1;
 }
 
 .podium-card--main {
@@ -365,27 +391,33 @@ const rewardAmount = (team) => {
 }
 
 .podium-card--silver {
+  --card-accent: #2a72ff;
+  --card-accent-soft: rgba(96, 165, 250, 0.18);
+  --card-depth: rgba(10, 44, 116, 0.86);
   background:
-    radial-gradient(circle at 16% 12%, rgba(96, 165, 250, 0.16), rgba(219, 234, 254, 0) 22%),
+    linear-gradient(90deg, rgba(42, 114, 255, 0.12), rgba(255, 255, 255, 0) 46%),
+    radial-gradient(circle at 16% 12%, var(--card-accent-soft), rgba(219, 234, 254, 0) 22%),
     linear-gradient(180deg, rgba(6, 22, 56, 0.98), rgba(4, 14, 38, 0.98));
 }
 
 .podium-card--gold {
+  --card-accent: #f7b500;
+  --card-accent-soft: rgba(255, 236, 166, 0.2);
+  --card-depth: rgba(100, 70, 10, 0.82);
   background:
-    radial-gradient(circle at 50% 10%, rgba(255, 236, 166, 0.18), rgba(255, 236, 166, 0) 24%),
+    linear-gradient(90deg, rgba(247, 181, 0, 0.12), rgba(255, 255, 255, 0) 46%),
+    radial-gradient(circle at 50% 10%, var(--card-accent-soft), rgba(255, 236, 166, 0) 24%),
     linear-gradient(180deg, rgba(34, 27, 8, 0.98), rgba(16, 13, 7, 0.98));
-  border-color: rgba(250, 204, 21, 0.52);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 3px 0 rgba(100, 70, 10, 0.8),
-    0 22px 40px -28px rgba(2, 6, 23, 0.72);
 }
 
 .podium-card--bronze {
+  --card-accent: #ff8419;
+  --card-accent-soft: rgba(255, 143, 40, 0.18);
+  --card-depth: rgba(118, 49, 7, 0.82);
   background:
-    radial-gradient(circle at 16% 12%, rgba(255, 143, 40, 0.16), rgba(255, 221, 189, 0) 22%),
+    linear-gradient(90deg, rgba(255, 132, 25, 0.12), rgba(255, 255, 255, 0) 46%),
+    radial-gradient(circle at 16% 12%, var(--card-accent-soft), rgba(255, 221, 189, 0) 22%),
     linear-gradient(180deg, rgba(43, 20, 6, 0.98), rgba(24, 11, 6, 0.98));
-  border-color: rgba(251, 146, 60, 0.42);
 }
 
 .podium-card__glow {
@@ -857,15 +889,23 @@ const rewardAmount = (team) => {
 }
 
 .mini-card {
+  --card-accent: #2a72ff;
+  --card-accent-soft: rgba(96, 165, 250, 0.14);
+  --card-depth: rgba(10, 36, 88, 0.84);
   min-height: 21.8rem;
   background:
-    radial-gradient(circle at 18% 12%, rgba(96, 165, 250, 0.16), rgba(219, 234, 254, 0) 20%),
+    linear-gradient(90deg, rgba(42, 114, 255, 0.08), rgba(255, 255, 255, 0) 48%),
+    radial-gradient(circle at 18% 12%, var(--card-accent-soft), rgba(219, 234, 254, 0) 20%),
     linear-gradient(180deg, rgba(6, 22, 56, 0.98), rgba(4, 14, 38, 0.98));
 }
 
 .mini-card--neutral {
+  --card-accent: #14b8a6;
+  --card-accent-soft: rgba(45, 212, 191, 0.14);
+  --card-depth: rgba(7, 72, 82, 0.82);
   background:
-    radial-gradient(circle at 18% 12%, rgba(45, 212, 191, 0.14), rgba(219, 234, 254, 0) 20%),
+    linear-gradient(90deg, rgba(20, 184, 166, 0.09), rgba(255, 255, 255, 0) 48%),
+    radial-gradient(circle at 18% 12%, var(--card-accent-soft), rgba(219, 234, 254, 0) 20%),
     linear-gradient(180deg, rgba(5, 38, 48, 0.98), rgba(4, 20, 32, 0.98));
 }
 
