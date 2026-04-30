@@ -34,8 +34,7 @@ const fourthPlace = computed(() => rankMap.value.get(4) ?? null)
 const PENALTY_RATE = 0.1
 
 const totalInstalled = computed(() =>
-  [...props.teamRankings, ...props.nonRankingTeams]
-    .reduce((sum, team) => sum + (Number(team.totalInstalled) || 0), 0)
+  props.teamRankings.reduce((sum, team) => sum + (Number(team.totalInstalled) || 0), 0)
 )
 const isTargetReached = computed(() => totalInstalled.value >= props.totalTarget)
 const effectiveReward = computed(() =>
