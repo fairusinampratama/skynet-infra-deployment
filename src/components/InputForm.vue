@@ -15,7 +15,7 @@ const formData = ref({
 
 const teams = [
   'Tim 1 (Ridwan)',
-  'Tim 2 (Dappa)',
+  'Tim 2 (Daffa)',
   'Tim 3 (Tyo)',
   'Tim 4 (Rafly)'
 ]
