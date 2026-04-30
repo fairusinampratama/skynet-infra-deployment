@@ -5,7 +5,7 @@ const hasFetchedLogs = ref(false)
 const fetchLogsFailed = ref(false)
 
 const SHOWCASE_TEAMS = [
-  { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 26, odc: 2, totalInstalled: 28 },
+  { id: 1, name: 'Tim 1', pic: 'Riduan', odp: 26, odc: 2, totalInstalled: 28 },
   { id: 3, name: 'Tim 3', pic: 'Mr. Sukun', odp: 24, odc: 3, totalInstalled: 27 },
   { id: 2, name: 'Tim 2', pic: 'Daffa', odp: 20, odc: 1, totalInstalled: 21 },
   { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 4, odc: 1, totalInstalled: 5 }
@@ -83,7 +83,7 @@ export function useDashboard() {
   }
 
   const emptyTeams = [
-    { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 0, odc: 0, totalInstalled: 0 },
+    { id: 1, name: 'Tim 1', pic: 'Riduan', odp: 0, odc: 0, totalInstalled: 0 },
     { id: 2, name: 'Tim 2', pic: 'Daffa', odp: 0, odc: 0, totalInstalled: 0 },
     { id: 3, name: 'Tim 3', pic: 'Mr. Sukun', odp: 0, odc: 0, totalInstalled: 0 },
     { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 0, odc: 0, totalInstalled: 0 }
@@ -95,7 +95,7 @@ export function useDashboard() {
     }
 
     const totals = [
-      { id: 1, name: 'Tim 1', pic: 'Ridwan', odp: 0, odc: 0 },
+      { id: 1, name: 'Tim 1', pic: 'Riduan', odp: 0, odc: 0 },
       { id: 2, name: 'Tim 2', pic: 'Daffa', odp: 0, odc: 0 },
       { id: 3, name: 'Tim 3', pic: 'Mr. Sukun', odp: 0, odc: 0 },
       { id: 4, name: 'Tim 4', pic: 'Rafly', odp: 0, odc: 0 }

@@ -14,7 +14,7 @@ const emit = defineEmits(['submit'])
 const today = new Date().toISOString().split('T')[0]
 
 const teamCards = [
-  { key: 'tim1', title: 'Tim 1', pic: 'Ridwan' },
+  { key: 'tim1', title: 'Tim 1', pic: 'Riduan' },
   { key: 'tim2', title: 'Tim 2', pic: 'Daffa' },
   { key: 'tim3', title: 'Tim 3', pic: 'Mr. Sukun' },
   { key: 'tim4', title: 'Tim 4', pic: 'Rafly' }

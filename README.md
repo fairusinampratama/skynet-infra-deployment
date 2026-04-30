@@ -9,7 +9,7 @@ This application was specifically built to replace and mirror the data structure
 - 📊 **Multi-View Architecture**: 
   - **Overview**: A high-level visual dashboard with summary cards, progress bars, interactive line charts, and team-specific performance rollups.
   - **Pencatatan Harian**: A dedicated CRUD interface for daily data entry, featuring a smart, context-aware form and a comprehensive data table with sticky columns.
-- 👥 **Multi-Team Tracking**: Simultaneously records and tracks performance for 4 distinct installation teams (Ridwan, Daffa, Mr. Sukun, Baim) per day.
+- 👥 **Multi-Team Tracking**: Simultaneously records and tracks performance for 4 distinct installation teams (Riduan, Daffa, Mr. Sukun, Baim) per day.
 - 📈 **Dynamic Calculations**: Automatically computes daily totals, cumulative sums (Akumulasi), percentage progress against global targets, and remaining sprint days.
 - 📥 **Excel Export (SheetJS)**: One-click export generates a multi-sheet `.xlsx` file perfectly formatted to match the original reporting standards.
 - 🗄️ **Centralized Database**: Utilizes an Express.js + SQLite backend to ensure data is permanently stored, persistent across all devices, and safe from browser cache clears.
