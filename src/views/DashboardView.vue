@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { CalendarDays, Clock3 } from 'lucide-vue-next'
+import { CalendarDays, ChevronDown, Clock3, MapPinned } from 'lucide-vue-next'
 import { useDashboard } from '../composables/useDashboard'
 import SummaryCards from '../components/SummaryCards.vue'
 import ProgressCharts from '../components/ProgressCharts.vue'
@@ -12,6 +12,10 @@ const {
   TARGET_ODP,
   TARGET_ODC,
   TOTAL_TARGET,
+  activeArea,
+  selectedAreaId,
+  areaOptions,
+  areaSummaries,
   totalOdp,
   totalOdc,
   totalInstalled,
@@ -31,6 +35,7 @@ const REWARD_TARGET = 411
 
 const latestLog = computed(() => logs.value[logs.value.length - 1] ?? null)
 const nonRankingTeams = computed(() => teamTotals.value.filter((team) => team.rankingEligible === false))
+const hasTeamProgress = computed(() => activeArea.value.id === 'randuagung')
 
 const latestDateLabel = computed(() => {
   if (!latestLog.value?.date) return '24 Mei 2025'
@@ -100,14 +105,68 @@ const latestTimeLabel = computed(() => {
           </div>
         </div>
 
+        <div class="area-console mt-4">
+          <div class="area-console__head">
+            <div>
+              <div class="area-chip">
+                <MapPinned :size="15" />
+                Area Dashboard
+              </div>
+              <h2 class="area-console__title">{{ activeArea.name }}</h2>
+            </div>
+
+            <label class="area-select-wrap" for="area-select">
+              <span>Pilih Area</span>
+              <div class="area-select-shell">
+                <select id="area-select" v-model="selectedAreaId" class="area-select">
+                  <option v-for="area in areaOptions" :key="area.id" :value="area.id">
+                    {{ area.name }}
+                  </option>
+                </select>
+                <ChevronDown :size="17" class="area-select-icon" />
+              </div>
+            </label>
+          </div>
+
+          <div class="area-card-grid">
+            <button
+              v-for="area in areaSummaries"
+              :key="area.id"
+              type="button"
+              class="area-card"
+              :class="{ 'area-card--active': selectedAreaId === area.id }"
+              @click="selectedAreaId = area.id"
+            >
+              <span class="area-card__status">{{ area.hasKnownTarget ? 'Target aktif' : 'Menunggu target' }}</span>
+              <strong>{{ area.name }}</strong>
+              <span class="area-card__target">{{ area.targetLabel }}</span>
+              <span class="area-card__meta">{{ area.splitTargetLabel }}</span>
+              <span class="area-card__progress">
+                <span :style="{ width: `${area.progress}%` }"></span>
+              </span>
+            </button>
+          </div>
+        </div>
+
         <div class="relative mt-3 md:mt-4">
           <TeamRankingBoard
+            v-if="hasTeamProgress"
             :team-rankings="teamRankings"
             :non-ranking-teams="nonRankingTeams"
             :total-target="TOTAL_TARGET"
             :reward-target="REWARD_TARGET"
             :total-reward="TOTAL_REWARD"
           />
+          <div v-else class="area-empty-state">
+            <div class="area-empty-state__icon">
+              <MapPinned :size="28" />
+            </div>
+            <div>
+              <p>{{ activeArea.name }}</p>
+              <h3>Area sudah disiapkan di dashboard.</h3>
+              <span>Data progres tim, grafik harian, dan ranking akan tampil setelah input harian area ini mulai diisi.</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -131,6 +190,7 @@ const latestTimeLabel = computed(() => {
         :days-remaining="remainingDays"
         :remaining-odp="remainingOdp"
         :remaining-odc="remainingOdc"
+        :has-known-target="activeArea.hasKnownTarget"
       />
     </section>
 
@@ -351,6 +411,213 @@ const latestTimeLabel = computed(() => {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0));
 }
 
+.area-console {
+  position: relative;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(92, 131, 207, 0.28);
+  background: rgba(5, 17, 43, 0.76);
+  padding: 1rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 34px -30px rgba(2, 6, 23, 0.9);
+}
+
+.area-console__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.area-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  background: rgba(8, 35, 80, 0.72);
+  padding: 0.44rem 0.7rem;
+  color: #c8dcff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.area-console__title {
+  margin-top: 0.55rem;
+  color: #ffffff;
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.area-select-wrap {
+  display: grid;
+  gap: 0.45rem;
+  min-width: min(18rem, 100%);
+}
+
+.area-select-wrap span {
+  color: rgba(218, 231, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.area-select-shell {
+  position: relative;
+}
+
+.area-select {
+  width: 100%;
+  appearance: none;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(125, 211, 252, 0.46);
+  background:
+    linear-gradient(180deg, rgba(226, 244, 255, 0.98), rgba(186, 222, 255, 0.96));
+  color: #08213f;
+  font-weight: 800;
+  padding: 0.82rem 2.5rem 0.82rem 0.9rem;
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 12px 22px -18px rgba(56, 189, 248, 0.74);
+}
+
+.area-select option {
+  background: #f4fbff;
+  color: #08213f;
+}
+
+.area-select:focus {
+  border-color: rgba(96, 165, 250, 0.78);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.area-select-icon {
+  position: absolute;
+  right: 0.9rem;
+  top: 50%;
+  color: #0f4f8f;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.area-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+
+.area-card {
+  display: grid;
+  gap: 0.45rem;
+  text-align: left;
+  border-radius: 1rem;
+  border: 1px solid rgba(76, 111, 176, 0.3);
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 32%),
+    rgba(7, 24, 57, 0.76);
+  padding: 0.88rem;
+  color: #ffffff;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.area-card:hover,
+.area-card--active {
+  border-color: rgba(74, 163, 255, 0.78);
+  background:
+    radial-gradient(circle at top left, rgba(47, 140, 255, 0.24), transparent 32%),
+    rgba(9, 35, 80, 0.9);
+  transform: translateY(-1px);
+}
+
+.area-card__status,
+.area-card__meta {
+  color: rgba(211, 226, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.area-card strong {
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.area-card__target {
+  color: #f7fbff;
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.area-card__progress {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(137, 167, 221, 0.18);
+}
+
+.area-card__progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #32b1ff 0%, #49f2ae 100%);
+}
+
+.area-empty-state {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 18rem;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(83, 130, 214, 0.3);
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 28%),
+    linear-gradient(180deg, rgba(5, 17, 43, 0.96), rgba(3, 12, 32, 0.96));
+  padding: 1.4rem;
+  color: #ffffff;
+}
+
+.area-empty-state__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  background: rgba(7, 29, 68, 0.72);
+  color: #bdd7ff;
+}
+
+.area-empty-state p {
+  color: #86d8ff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.area-empty-state h3 {
+  margin-top: 0.35rem;
+  font-size: 1.65rem;
+  font-weight: 900;
+}
+
+.area-empty-state span {
+  display: block;
+  margin-top: 0.4rem;
+  color: rgba(219, 231, 255, 0.78);
+  line-height: 1.5;
+}
+
 @media (max-width: 1023px) {
   .showcase-frame {
     min-height: auto;
@@ -394,6 +661,15 @@ const latestTimeLabel = computed(() => {
 
   .update-badge {
     min-width: 100%;
+  }
+
+  .area-console__head,
+  .area-empty-state {
+    flex-direction: column;
+  }
+
+  .area-card-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

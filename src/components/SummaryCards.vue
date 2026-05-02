@@ -13,12 +13,19 @@ const props = defineProps({
   daysRemaining: { type: Number, required: true },
   remainingOdp: { type: Number, required: true },
   remainingOdc: { type: Number, required: true },
+  hasKnownTarget: { type: Boolean, default: true },
 });
 
 const remainingTotal = computed(() => props.remainingOdp + props.remainingOdc);
 const progressWidth = computed(() => Math.min(Math.max(props.progress, 0), 100));
-const installedRatioLabel = computed(() => `${props.installed} / ${props.target}`);
-const statusLabel = computed(() => (props.daysRemaining <= 7 ? "Mepet" : "On Track"));
+const installedRatioLabel = computed(() => (props.hasKnownTarget ? `${props.installed} / ${props.target}` : "Target belum diisi"));
+const targetLabel = computed(() => (props.hasKnownTarget ? props.target : "Belum diisi"));
+const targetSplitLabel = computed(() => (props.hasKnownTarget ? `ODP ${props.targetOdp} | ODC ${props.targetOdc}` : "ODP & ODC menyusul"));
+const remainingTotalLabel = computed(() => (props.hasKnownTarget ? remainingTotal.value : "-"));
+const statusLabel = computed(() => {
+  if (!props.hasKnownTarget) return "Menunggu Target";
+  return props.daysRemaining <= 7 ? "Mepet" : "On Track";
+});
 const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 </script>
 
@@ -39,8 +46,8 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
       <div class="kpi-mini-grid">
         <div class="kpi-mini-box">
           <p class="kpi-mini-label">Target</p>
-          <p class="kpi-mini-value">{{ target }}</p>
-          <p class="kpi-mini-meta">ODP {{ targetOdp }} | ODC {{ targetOdc }}</p>
+          <p class="kpi-mini-value" :class="{ 'kpi-value--text': !hasKnownTarget }">{{ targetLabel }}</p>
+          <p class="kpi-mini-meta">{{ targetSplitLabel }}</p>
         </div>
         <div class="kpi-mini-box">
           <p class="kpi-mini-label">Terpasang</p>
@@ -70,7 +77,7 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
       <div class="kpi-head">
         <div>
           <p class="kpi-eyebrow">Target</p>
-          <p class="kpi-metric-value">{{ target }}</p>
+          <p class="kpi-metric-value" :class="{ 'kpi-value--text': !hasKnownTarget }">{{ targetLabel }}</p>
         </div>
         <div class="kpi-icon-badge kpi-icon-badge--blue">
           <Target :size="22" />
@@ -79,11 +86,11 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
       <div class="kpi-stack">
         <div class="kpi-stack-item">
           <span>ODP</span>
-          <strong>{{ targetOdp }}</strong>
+          <strong>{{ hasKnownTarget ? targetOdp : '-' }}</strong>
         </div>
         <div class="kpi-stack-item">
           <span>ODC</span>
-          <strong>{{ targetOdc }}</strong>
+          <strong>{{ hasKnownTarget ? targetOdc : '-' }}</strong>
         </div>
       </div>
     </article>
@@ -154,18 +161,18 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
         </div>
         <div>
           <p class="kpi-eyebrow kpi-eyebrow--rose">Sisa Pemasangan</p>
-          <p class="kpi-banner-value">{{ remainingTotal }}</p>
+          <p class="kpi-banner-value">{{ remainingTotalLabel }}</p>
         </div>
       </div>
 
       <div class="kpi-banner-side">
         <div class="kpi-banner-box">
           <span>ODP</span>
-          <strong>{{ remainingOdp }}</strong>
+          <strong>{{ hasKnownTarget ? remainingOdp : '-' }}</strong>
         </div>
         <div class="kpi-banner-box kpi-banner-box--amber">
           <span>ODC</span>
-          <strong>{{ remainingOdc }}</strong>
+          <strong>{{ hasKnownTarget ? remainingOdc : '-' }}</strong>
         </div>
       </div>
     </article>
@@ -390,6 +397,11 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 
 .kpi-metric-value {
   font-size: 3rem;
+}
+
+.kpi-value--text {
+  font-size: 1.35rem;
+  line-height: 1.15;
 }
 
 .kpi-banner-value {
@@ -644,6 +656,10 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 
   .kpi-metric-value {
     font-size: 3.15rem;
+  }
+
+  .kpi-value--text {
+    font-size: 1.35rem;
   }
 }
 </style>
