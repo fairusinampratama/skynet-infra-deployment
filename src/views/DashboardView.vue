@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue'
-import { CalendarDays, ChevronDown, Clock3, MapPinned } from 'lucide-vue-next'
+import { computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { CalendarDays, Clock3, MapPinned } from 'lucide-vue-next'
 import { useDashboard } from '../composables/useDashboard'
 import SummaryCards from '../components/SummaryCards.vue'
 import ProgressCharts from '../components/ProgressCharts.vue'
@@ -14,8 +15,6 @@ const {
   TOTAL_TARGET,
   activeArea,
   selectedAreaId,
-  areaOptions,
-  areaSummaries,
   totalOdp,
   totalOdc,
   totalInstalled,
@@ -30,12 +29,29 @@ const {
   teamRankings
 } = useDashboard()
 
+const route = useRoute()
 const TOTAL_REWARD = 20000000
 const REWARD_TARGET = 411
 
 const latestLog = computed(() => logs.value[logs.value.length - 1] ?? null)
 const nonRankingTeams = computed(() => teamTotals.value.filter((team) => team.rankingEligible === false))
 const hasTeamProgress = computed(() => activeArea.value.id === 'randuagung')
+const activeAreaTarget = computed(() => TARGET_ODP.value + TARGET_ODC.value)
+const activeAreaProgressWidth = computed(() => Math.min(Math.max(progressPercent.value, 0), 100))
+const activeAreaTargetLabel = computed(() =>
+  activeArea.value.hasKnownTarget ? `${activeAreaTarget.value} titik` : 'Belum diisi'
+)
+const activeAreaSplitLabel = computed(() =>
+  activeArea.value.hasKnownTarget ? `ODP ${TARGET_ODP.value} | ODC ${TARGET_ODC.value}` : 'Target ODP & ODC menyusul'
+)
+
+watch(
+  () => route.meta.areaId,
+  (areaId) => {
+    selectedAreaId.value = areaId || 'randuagung'
+  },
+  { immediate: true }
+)
 
 const latestDateLabel = computed(() => {
   if (!latestLog.value?.date) return '24 Mei 2025'
@@ -110,42 +126,31 @@ const latestTimeLabel = computed(() => {
             <div>
               <div class="area-chip">
                 <MapPinned :size="15" />
-                Area Dashboard
+                Area Aktif
               </div>
               <h2 class="area-console__title">{{ activeArea.name }}</h2>
             </div>
-
-            <label class="area-select-wrap" for="area-select">
-              <span>Pilih Area</span>
-              <div class="area-select-shell">
-                <select id="area-select" v-model="selectedAreaId" class="area-select">
-                  <option v-for="area in areaOptions" :key="area.id" :value="area.id">
-                    {{ area.name }}
-                  </option>
-                </select>
-                <ChevronDown :size="17" class="area-select-icon" />
-              </div>
-            </label>
+            <p class="area-console__note">Pilih area dari menu atas untuk berpindah halaman dashboard.</p>
           </div>
 
-          <div class="area-card-grid">
-            <button
-              v-for="area in areaSummaries"
-              :key="area.id"
-              type="button"
-              class="area-card"
-              :class="{ 'area-card--active': selectedAreaId === area.id }"
-              @click="selectedAreaId = area.id"
-            >
-              <span class="area-card__status">{{ area.hasKnownTarget ? 'Target aktif' : 'Menunggu target' }}</span>
-              <strong>{{ area.name }}</strong>
-              <span class="area-card__target">{{ area.targetLabel }}</span>
-              <span class="area-card__meta">{{ area.splitTargetLabel }}</span>
-              <span class="area-card__progress">
-                <span :style="{ width: `${area.progress}%` }"></span>
-              </span>
-            </button>
-          </div>
+          <article class="area-focus-card">
+            <div>
+              <span class="area-focus-card__status">{{ activeArea.hasKnownTarget ? 'Target aktif' : 'Menunggu target' }}</span>
+              <strong>{{ activeArea.name }}</strong>
+              <span class="area-focus-card__target">{{ activeAreaTargetLabel }}</span>
+              <span class="area-focus-card__meta">{{ activeAreaSplitLabel }}</span>
+            </div>
+
+            <div class="area-focus-card__side">
+              <span>Terpasang</span>
+              <strong>{{ totalInstalled }}</strong>
+              <small>{{ progressPercent }}%</small>
+            </div>
+
+            <span class="area-focus-card__progress">
+              <span :style="{ width: `${activeAreaProgressWidth}%` }"></span>
+            </span>
+          </article>
         </div>
 
         <div class="relative mt-3 md:mt-4">
@@ -452,91 +457,46 @@ const latestTimeLabel = computed(() => {
   line-height: 1;
 }
 
-.area-select-wrap {
-  display: grid;
-  gap: 0.45rem;
-  min-width: min(18rem, 100%);
+.area-console__note {
+  max-width: 22rem;
+  color: rgba(211, 226, 255, 0.78);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: right;
 }
 
-.area-select-wrap span {
-  color: rgba(218, 231, 255, 0.78);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.area-select-shell {
+.area-focus-card {
   position: relative;
-}
-
-.area-select {
-  width: 100%;
-  appearance: none;
-  border-radius: 0.95rem;
-  border: 1px solid rgba(125, 211, 252, 0.46);
-  background:
-    linear-gradient(180deg, rgba(226, 244, 255, 0.98), rgba(186, 222, 255, 0.96));
-  color: #08213f;
-  font-weight: 800;
-  padding: 0.82rem 2.5rem 0.82rem 0.9rem;
-  outline: none;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 12px 22px -18px rgba(56, 189, 248, 0.74);
-}
-
-.area-select option {
-  background: #f4fbff;
-  color: #08213f;
-}
-
-.area-select:focus {
-  border-color: rgba(96, 165, 250, 0.78);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
-}
-
-.area-select-icon {
-  position: absolute;
-  right: 0.9rem;
-  top: 50%;
-  color: #0f4f8f;
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-
-.area-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.2rem;
   margin-top: 0.9rem;
-}
-
-.area-card {
-  display: grid;
-  gap: 0.45rem;
-  text-align: left;
   border-radius: 1rem;
-  border: 1px solid rgba(76, 111, 176, 0.3);
+  border: 1px solid rgba(74, 163, 255, 0.66);
   background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 32%),
-    rgba(7, 24, 57, 0.76);
+    radial-gradient(circle at top left, rgba(47, 140, 255, 0.22), transparent 32%),
+    linear-gradient(180deg, rgba(9, 35, 80, 0.92), rgba(7, 24, 57, 0.9));
   padding: 0.88rem;
   color: #ffffff;
-  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 34px -30px rgba(14, 165, 233, 0.64);
 }
 
-.area-card:hover,
-.area-card--active {
-  border-color: rgba(74, 163, 255, 0.78);
-  background:
-    radial-gradient(circle at top left, rgba(47, 140, 255, 0.24), transparent 32%),
-    rgba(9, 35, 80, 0.9);
-  transform: translateY(-1px);
+.area-focus-card__side {
+  min-width: 9rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  background: rgba(6, 20, 50, 0.68);
+  padding: 0.74rem 0.85rem;
+  text-align: right;
 }
 
-.area-card__status,
-.area-card__meta {
+.area-focus-card__status,
+.area-focus-card__meta,
+.area-focus-card__side span {
+  display: block;
   color: rgba(211, 226, 255, 0.78);
   font-size: 0.72rem;
   font-weight: 800;
@@ -544,26 +504,50 @@ const latestTimeLabel = computed(() => {
   text-transform: uppercase;
 }
 
-.area-card strong {
+.area-focus-card strong {
+  display: block;
+  margin-top: 0.45rem;
   font-size: 1.05rem;
   font-weight: 900;
 }
 
-.area-card__target {
+.area-focus-card__target {
+  display: block;
+  margin-top: 0.6rem;
   color: #f7fbff;
   font-size: 1.35rem;
   font-weight: 900;
   line-height: 1;
 }
 
-.area-card__progress {
+.area-focus-card__meta {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.area-focus-card__side strong {
+  color: #67e8f9;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.area-focus-card__side small {
+  display: block;
+  margin-top: 0.35rem;
+  color: rgba(226, 244, 255, 0.82);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.area-focus-card__progress {
+  grid-column: 1 / -1;
   height: 0.45rem;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(137, 167, 221, 0.18);
 }
 
-.area-card__progress span {
+.area-focus-card__progress span {
   display: block;
   height: 100%;
   border-radius: inherit;
@@ -668,8 +652,17 @@ const latestTimeLabel = computed(() => {
     flex-direction: column;
   }
 
-  .area-card-grid {
+  .area-console__note {
+    max-width: none;
+    text-align: left;
+  }
+
+  .area-focus-card {
     grid-template-columns: 1fr;
+  }
+
+  .area-focus-card__side {
+    text-align: left;
   }
 }
 </style>

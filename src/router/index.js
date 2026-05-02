@@ -8,7 +8,25 @@ const router = createRouter({
     {
       path: '/',
       name: 'dashboard',
-      component: DashboardView
+      redirect: '/randuagung'
+    },
+    {
+      path: '/randuagung',
+      name: 'dashboard-randuagung',
+      component: DashboardView,
+      meta: { areaId: 'randuagung' }
+    },
+    {
+      path: '/gadang',
+      name: 'dashboard-gadang',
+      component: DashboardView,
+      meta: { areaId: 'pasar-gadang' }
+    },
+    {
+      path: '/mangliawan',
+      name: 'dashboard-mangliawan',
+      component: DashboardView,
+      meta: { areaId: 'mangliawan' }
     },
     {
       path: '/crud',
