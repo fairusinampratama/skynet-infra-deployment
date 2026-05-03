@@ -127,30 +127,29 @@ const selectArea = (areaId) => {
         <div class="crud-date-wrap">
           <label class="crud-label">Area</label>
           <div class="crud-area-select">
-            <label class="crud-area-select__trigger">
+            <div class="crud-area-select__trigger">
               <span class="crud-area-select__icon">
                 <MapPinned :size="18" />
               </span>
               <span class="crud-area-select__copy">
                 <small>Area Input</small>
-                <strong>{{ selectedAreaName }}</strong>
+                <select
+                  :value="selectedAreaId"
+                  class="crud-area-select__native"
+                  aria-label="Pilih area input harian"
+                  @change="selectArea($event.target.value)"
+                >
+                  <option v-for="area in areaOptions" :key="area.id" :value="area.id">
+                    {{ area.name }}
+                  </option>
+                </select>
                 <em>{{ selectedAreaTargetLabel }}</em>
               </span>
               <ChevronDown
                 :size="18"
                 class="crud-area-select__chevron"
               />
-              <select
-                :value="selectedAreaId"
-                class="crud-area-select__native"
-                aria-label="Pilih area input harian"
-                @change="selectArea($event.target.value)"
-              >
-                <option v-for="area in areaOptions" :key="area.id" :value="area.id">
-                  {{ area.name }} - {{ area.splitTargetLabel }}
-                </option>
-              </select>
-            </label>
+            </div>
           </div>
         </div>
 
@@ -377,7 +376,6 @@ const selectArea = (areaId) => {
 }
 
 .crud-area-select__trigger {
-  position: relative;
   display: grid;
   width: 100%;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -474,12 +472,25 @@ const selectArea = (areaId) => {
 }
 
 .crud-area-select__native {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
-  height: 100%;
+  min-width: 0;
+  margin-top: 0.18rem;
+  border: 0;
+  background: transparent;
+  color: #eef6ff;
   cursor: pointer;
-  opacity: 0;
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.15;
+  outline: none;
+  padding: 0;
+  appearance: none;
+}
+
+.crud-area-select__native option {
+  background: #071b3e;
+  color: #eef6ff;
 }
 
 .crud-area-note {
