@@ -96,3 +96,18 @@ This application is fully containerized and optimized for deployment via [Coolif
    - If you previously mounted `/app/server`, keep that storage available for one deploy. The backend will copy `/app/server/database.sqlite` into `/app/data/database.sqlite` when `/app/data` is empty.
 5. **Deploy**:
    - Click the Deploy button. Coolify will build the Docker image and start the application!
+
+### MariaDB Mode
+
+For production, use a Coolify MariaDB database and set these application environment variables:
+
+```env
+DB_DRIVER=mariadb
+MARIADB_HOST=your-mariadb-service-host
+MARIADB_PORT=3306
+MARIADB_DATABASE=skynet
+MARIADB_USER=skynet
+MARIADB_PASSWORD=your-secure-password
+```
+
+When MariaDB is empty, the app will try to import existing SQLite rows from `DB_PATH`, `LEGACY_DB_PATH`, `/app/server/database.sqlite`, or the bundled backend database.
