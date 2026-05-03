@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { CalendarDays, DatabaseZap, MapPinned, PencilLine, RadioTower, ShieldEllipsis } from 'lucide-vue-next'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { CalendarDays, Check, ChevronDown, DatabaseZap, MapPinned, PencilLine, RadioTower, ShieldEllipsis } from 'lucide-vue-next'
 
 const props = defineProps({
   logs: {
@@ -42,10 +42,15 @@ const getInitialState = (date = today) => ({
 
 const formData = ref(getInitialState())
 const isEditMode = ref(false)
+const isAreaMenuOpen = ref(false)
+const areaSelectRef = ref(null)
 
-const selectedAreaName = computed(() =>
-  props.areaOptions.find((area) => area.id === props.selectedAreaId)?.name || 'Area'
+const selectedArea = computed(() =>
+  props.areaOptions.find((area) => area.id === props.selectedAreaId) || props.areaOptions[0] || null
 )
+const selectedAreaName = computed(() => selectedArea.value?.name || 'Area')
+const selectedAreaTargetLabel = computed(() => selectedArea.value?.targetLabel || 'Target belum diisi')
+const selectedAreaSplitLabel = computed(() => selectedArea.value?.splitTargetLabel || 'ODP, ODC & HP menyusul')
 
 watch(() => props.selectedAreaId, (areaId) => {
   formData.value = {
@@ -84,6 +89,25 @@ const handleSubmit = () => {
     areaId: props.selectedAreaId
   })
 }
+
+const selectArea = (areaId) => {
+  emit('update:selectedAreaId', areaId)
+  isAreaMenuOpen.value = false
+}
+
+const closeAreaMenu = (event) => {
+  if (!areaSelectRef.value?.contains(event.target)) {
+    isAreaMenuOpen.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('click', closeAreaMenu)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', closeAreaMenu)
+})
 </script>
 
 <template>
@@ -119,17 +143,58 @@ const handleSubmit = () => {
       <div class="crud-control-grid">
         <div class="crud-date-wrap">
           <label class="crud-label">Area</label>
-          <div class="crud-date-box">
-            <MapPinned :size="18" class="crud-date-icon" />
-            <select
-              :value="selectedAreaId"
-              class="crud-input crud-input--date"
-              @change="$emit('update:selectedAreaId', $event.target.value)"
+          <div
+            ref="areaSelectRef"
+            class="crud-area-select"
+            @focusout="isAreaMenuOpen = false"
+            @keydown.escape="isAreaMenuOpen = false"
+          >
+            <button
+              type="button"
+              class="crud-area-select__trigger"
+              :class="{ 'crud-area-select__trigger--open': isAreaMenuOpen }"
+              aria-haspopup="listbox"
+              :aria-expanded="isAreaMenuOpen"
+              @mousedown.prevent
+              @click="isAreaMenuOpen = !isAreaMenuOpen"
             >
-              <option v-for="area in areaOptions" :key="area.id" :value="area.id">
-                {{ area.name }}
-              </option>
-            </select>
+              <span class="crud-area-select__icon">
+                <MapPinned :size="18" />
+              </span>
+              <span class="crud-area-select__copy">
+                <small>Area Input</small>
+                <strong>{{ selectedAreaName }}</strong>
+                <em>{{ selectedAreaTargetLabel }}</em>
+              </span>
+              <ChevronDown
+                :size="18"
+                class="crud-area-select__chevron"
+                :class="{ 'crud-area-select__chevron--open': isAreaMenuOpen }"
+              />
+            </button>
+
+            <div v-if="isAreaMenuOpen" class="crud-area-select__panel" role="listbox">
+              <button
+                v-for="area in areaOptions"
+                :key="area.id"
+                type="button"
+                class="crud-area-select__option"
+                :class="{ 'crud-area-select__option--active': selectedAreaId === area.id }"
+                role="option"
+                :aria-selected="selectedAreaId === area.id"
+                @mousedown.prevent
+                @click="selectArea(area.id)"
+              >
+                <span class="crud-area-select__option-icon">
+                  <MapPinned :size="15" />
+                </span>
+                <span class="crud-area-select__option-copy">
+                  <strong>{{ area.name }}</strong>
+                  <small>{{ area.splitTargetLabel }}</small>
+                </span>
+                <Check v-if="selectedAreaId === area.id" :size="16" class="crud-area-select__check" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -149,7 +214,7 @@ const handleSubmit = () => {
 
       <div class="crud-area-note">
         <MapPinned :size="15" />
-        <span>Input yang disimpan akan masuk ke area {{ selectedAreaName }}.</span>
+        <span>Input yang disimpan akan masuk ke area {{ selectedAreaName }}. {{ selectedAreaSplitLabel }}.</span>
       </div>
 
       <div class="crud-team-grid">
@@ -324,7 +389,7 @@ const handleSubmit = () => {
 
 .crud-control-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 20rem));
+  grid-template-columns: minmax(18rem, 28rem) minmax(0, 20rem);
   gap: 1rem;
   align-items: end;
 }
@@ -348,6 +413,188 @@ const handleSubmit = () => {
   border: 1px solid rgba(76, 116, 184, 0.32);
   background: rgba(6, 23, 56, 0.72);
   padding: 0 0.9rem;
+}
+
+.crud-area-select {
+  position: relative;
+  max-width: 28rem;
+}
+
+.crud-area-select__trigger {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(82, 137, 225, 0.38);
+  background:
+    radial-gradient(circle at 10% 0, rgba(14, 165, 233, 0.18), transparent 38%),
+    linear-gradient(180deg, rgba(7, 31, 72, 0.92), rgba(4, 18, 47, 0.92));
+  padding: 0.72rem 0.82rem;
+  color: #eef6ff;
+  text-align: left;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 34px -30px rgba(37, 99, 235, 0.88);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.crud-area-select__trigger:hover,
+.crud-area-select__trigger--open {
+  border-color: rgba(56, 189, 248, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 4px rgba(14, 165, 233, 0.13),
+    0 20px 38px -30px rgba(37, 99, 235, 0.9);
+  transform: translateY(-1px);
+}
+
+.crud-area-select__icon,
+.crud-area-select__option-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.crud-area-select__icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  background: linear-gradient(135deg, #1d4ed8, #0891b2);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.crud-area-select__copy,
+.crud-area-select__option-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.crud-area-select__copy small,
+.crud-area-select__option-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crud-area-select__copy small {
+  color: rgba(191, 219, 254, 0.82);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.crud-area-select__copy strong {
+  margin-top: 0.18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.crud-area-select__copy em {
+  margin-top: 0.15rem;
+  overflow: hidden;
+  color: rgba(213, 230, 255, 0.74);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crud-area-select__chevron {
+  color: rgba(223, 239, 255, 0.92);
+  transition: transform 0.18s ease;
+}
+
+.crud-area-select__chevron--open {
+  transform: rotate(180deg);
+}
+
+.crud-area-select__panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.55rem);
+  z-index: 25;
+  overflow: hidden;
+  border-radius: 1.05rem;
+  border: 1px solid rgba(96, 165, 250, 0.34);
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 32%),
+    linear-gradient(180deg, rgba(7, 27, 62, 0.98), rgba(4, 14, 37, 0.98));
+  padding: 0.42rem;
+  box-shadow:
+    0 26px 54px -30px rgba(2, 6, 23, 0.96),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.crud-area-select__option {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  border: 0;
+  border-radius: 0.82rem;
+  background: transparent;
+  color: #dcecff;
+  cursor: pointer;
+  padding: 0.75rem 0.78rem;
+  text-align: left;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+.crud-area-select__option:hover,
+.crud-area-select__option--active {
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.95), rgba(8, 145, 178, 0.94));
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.crud-area-select__option-icon {
+  width: 2rem;
+  height: 2rem;
+  background: rgba(37, 99, 235, 0.18);
+  color: #9dc8ff;
+}
+
+.crud-area-select__option:hover .crud-area-select__option-icon,
+.crud-area-select__option--active .crud-area-select__option-icon {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.crud-area-select__option-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.94rem;
+  font-weight: 900;
+}
+
+.crud-area-select__option-copy small {
+  margin-top: 0.14rem;
+  color: rgba(190, 211, 244, 0.72);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.crud-area-select__option:hover .crud-area-select__option-copy small,
+.crud-area-select__option--active .crud-area-select__option-copy small {
+  color: rgba(239, 246, 255, 0.84);
+}
+
+.crud-area-select__check {
+  color: currentColor;
 }
 
 .crud-area-note {
@@ -506,6 +753,11 @@ const handleSubmit = () => {
 
   .crud-control-grid {
     grid-template-columns: 1fr;
+  }
+
+  .crud-area-select,
+  .crud-date-box {
+    max-width: none;
   }
 
   .crud-team-grid {
