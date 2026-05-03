@@ -16,6 +16,33 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'database.sqlite')
 const ADMIN_PIN = process.env.ADMIN_PIN || '1234'
 const distPath = path.join(__dirname, '../dist')
 
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
+
+const seedDatabaseFile = () => {
+  if (fs.existsSync(DB_PATH)) return
+
+  const candidatePaths = [
+    process.env.LEGACY_DB_PATH,
+    path.join(path.dirname(DB_PATH), '../server/database.sqlite'),
+    path.join(__dirname, 'database.sqlite')
+  ].filter(Boolean)
+
+  const sourcePath = candidatePaths.find((candidatePath) => {
+    try {
+      return path.resolve(candidatePath) !== path.resolve(DB_PATH) && fs.existsSync(candidatePath)
+    } catch {
+      return false
+    }
+  })
+
+  if (!sourcePath) return
+
+  fs.copyFileSync(sourcePath, DB_PATH)
+  console.log(`Seeded SQLite database from ${sourcePath} to ${DB_PATH}`)
+}
+
+seedDatabaseFile()
+
 const ensureFrontendBuild = () => {
   const indexPath = path.join(distPath, 'index.html')
   if (fs.existsSync(indexPath)) return true
@@ -39,7 +66,12 @@ app.use(cors())
 app.use(express.json())
 
 const normalizeLogAreaId = (log) => log.areaId || 'randuagung'
-let databaseReady = Promise.resolve()
+let resolveDatabaseReady
+let rejectDatabaseReady
+const databaseReady = new Promise((resolve, reject) => {
+  resolveDatabaseReady = resolve
+  rejectDatabaseReady = reject
+})
 
 const dbRun = (sql, params = []) =>
   new Promise((resolve, reject) => {
@@ -110,6 +142,15 @@ const ensureDailyLogsSchema = async () => {
   console.log('Migrated daily_logs table to area-scoped schema')
 }
 
+const logDatabaseSnapshot = async () => {
+  const rows = await dbAll(
+    'SELECT id, area_id, date FROM daily_logs ORDER BY date DESC, area_id ASC LIMIT 5'
+  )
+  const [{ total }] = await dbAll('SELECT COUNT(*) AS total FROM daily_logs')
+  console.log(`SQLite daily_logs rows: ${total}`)
+  console.log(`SQLite latest rows: ${JSON.stringify(rows)}`)
+}
+
 const waitForDatabase = async (req, res, next) => {
   try {
     await databaseReady
@@ -139,12 +180,16 @@ const fetchDailyLogs = (req, res) => {
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
     console.error('Error opening database', err.message)
+    rejectDatabaseReady(err)
   } else {
     console.log(`Connected to SQLite database at ${DB_PATH}`)
-    databaseReady = ensureDailyLogsSchema().catch((schemaErr) => {
-      console.error('Error initializing daily_logs table', schemaErr.message)
-      throw schemaErr
-    })
+    ensureDailyLogsSchema()
+      .then(logDatabaseSnapshot)
+      .then(resolveDatabaseReady)
+      .catch((schemaErr) => {
+        console.error('Error initializing daily_logs table', schemaErr.message)
+        rejectDatabaseReady(schemaErr)
+      })
   }
 })
 
@@ -172,8 +217,8 @@ app.get('/api/logs', waitForDatabase, fetchDailyLogs)
 // POST /api/logs - Add or update a log
 app.post('/api/logs', waitForDatabase, (req, res) => {
   const log = req.body
-  if (!log.id || !log.date) {
-    return res.status(400).json({ error: 'Missing id or date' })
+  if (!log.date) {
+    return res.status(400).json({ error: 'Missing date' })
   }
 
   const areaId = normalizeLogAreaId(log)

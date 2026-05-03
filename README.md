@@ -91,7 +91,8 @@ This application is fully containerized and optimized for deployment via [Coolif
    - To ensure your SQLite database isn't erased during updates or container restarts, you must mount a persistent volume.
    - Go to the **Storages** (or Volumes) tab for your application in Coolify.
    - Add a new mount:
-     - **Destination Path**: `/app/server`
-   - *This mounts the server directory containing `database.sqlite` to your host machine's persistent storage.*
+     - **Destination Path**: `/app/data`
+   - *This mounts the data directory containing `database.sqlite` to your host machine's persistent storage.*
+   - If you previously mounted `/app/server`, keep that storage available for one deploy. The backend will copy `/app/server/database.sqlite` into `/app/data/database.sqlite` when `/app/data` is empty.
 5. **Deploy**:
    - Click the Deploy button. Coolify will build the Docker image and start the application!
