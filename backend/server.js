@@ -18,22 +18,26 @@ const distPath = path.join(__dirname, '../dist')
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
 
-const seedDatabaseFile = () => {
-  if (fs.existsSync(DB_PATH)) return
-
-  const candidatePaths = [
+const getSeedCandidatePaths = () =>
+  [
     process.env.LEGACY_DB_PATH,
     path.join(path.dirname(DB_PATH), '../server/database.sqlite'),
     path.join(__dirname, 'database.sqlite')
   ].filter(Boolean)
 
-  const sourcePath = candidatePaths.find((candidatePath) => {
+const findSeedDatabasePath = () =>
+  getSeedCandidatePaths().find((candidatePath) => {
     try {
       return path.resolve(candidatePath) !== path.resolve(DB_PATH) && fs.existsSync(candidatePath)
     } catch {
       return false
     }
   })
+
+const seedDatabaseFile = () => {
+  if (fs.existsSync(DB_PATH)) return
+
+  const sourcePath = findSeedDatabasePath()
 
   if (!sourcePath) return
 
@@ -86,6 +90,22 @@ const dbAll = (sql, params = []) =>
     db.all(sql, params, (err, rows) => {
       if (err) reject(err)
       else resolve(rows)
+    })
+  })
+
+const dbAllFromFile = (databasePath, sql, params = []) =>
+  new Promise((resolve, reject) => {
+    const sourceDb = new sqlite3.Database(databasePath, sqlite3.OPEN_READONLY, (openErr) => {
+      if (openErr) {
+        reject(openErr)
+        return
+      }
+
+      sourceDb.all(sql, params, (queryErr, rows) => {
+        sourceDb.close()
+        if (queryErr) reject(queryErr)
+        else resolve(rows)
+      })
     })
   })
 
@@ -142,6 +162,50 @@ const ensureDailyLogsSchema = async () => {
   console.log('Migrated daily_logs table to area-scoped schema')
 }
 
+const normalizeImportedRow = (row) => {
+  const log = JSON.parse(row.data)
+  const areaId = row.area_id || normalizeLogAreaId(log)
+  return {
+    ...log,
+    areaId,
+    id: log.id || row.id || `${areaId}-${log.date}`
+  }
+}
+
+const importSeedRowsIfEmpty = async () => {
+  const [{ total }] = await dbAll('SELECT COUNT(*) AS total FROM daily_logs')
+  if (total > 0) return
+
+  const sourcePath = findSeedDatabasePath()
+  if (!sourcePath) {
+    console.log('SQLite database is empty and no legacy database was found to import')
+    return
+  }
+
+  let sourceRows = []
+  try {
+    sourceRows = await dbAllFromFile(sourcePath, 'SELECT id, area_id, date, data FROM daily_logs ORDER BY date ASC')
+  } catch {
+    sourceRows = await dbAllFromFile(sourcePath, 'SELECT id, date, data FROM daily_logs ORDER BY date ASC')
+  }
+
+  let imported = 0
+  for (const row of sourceRows) {
+    try {
+      const nextLog = normalizeImportedRow(row)
+      await dbRun(
+        'INSERT OR REPLACE INTO daily_logs (id, area_id, date, data) VALUES (?, ?, ?, ?)',
+        [nextLog.id, nextLog.areaId, nextLog.date, JSON.stringify(nextLog)]
+      )
+      imported += 1
+    } catch (importErr) {
+      console.error(`Skipping legacy log ${row.id}`, importErr.message)
+    }
+  }
+
+  console.log(`Imported ${imported} daily_logs rows from ${sourcePath}`)
+}
+
 const logDatabaseSnapshot = async () => {
   const rows = await dbAll(
     'SELECT id, area_id, date FROM daily_logs ORDER BY date DESC, area_id ASC LIMIT 5'
@@ -184,6 +248,7 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
   } else {
     console.log(`Connected to SQLite database at ${DB_PATH}`)
     ensureDailyLogsSchema()
+      .then(importSeedRowsIfEmpty)
       .then(logDatabaseSnapshot)
       .then(resolveDatabaseReady)
       .catch((schemaErr) => {
