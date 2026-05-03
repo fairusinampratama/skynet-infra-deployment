@@ -29,9 +29,9 @@ const teamCards = [
   { key: 'tim5', title: 'Tim 5', pic: 'Mr.X' }
 ]
 
-const getInitialState = (date = today) => ({
+const getInitialState = (date = today, areaId = props.selectedAreaId) => ({
   date,
-  areaId: props.selectedAreaId,
+  areaId,
   tim1: { odp: 0, odc: 0 },
   tim2: { odp: 0, odc: 0 },
   tim3: { odp: 0, odc: 0 },
@@ -42,35 +42,29 @@ const getInitialState = (date = today) => ({
 
 const formData = ref(getInitialState())
 const isEditMode = ref(false)
+const localSelectedAreaId = ref(props.selectedAreaId)
 
 const selectedArea = computed(() =>
-  props.areaOptions.find((area) => area.id === props.selectedAreaId) || props.areaOptions[0] || null
+  props.areaOptions.find((area) => area.id === localSelectedAreaId.value) || props.areaOptions[0] || null
 )
 const selectedAreaName = computed(() => selectedArea.value?.name || 'Area')
 const selectedAreaTargetLabel = computed(() => selectedArea.value?.targetLabel || 'Target belum diisi')
 const selectedAreaSplitLabel = computed(() => selectedArea.value?.splitTargetLabel || 'ODP, ODC & HP menyusul')
 
 watch(() => props.selectedAreaId, (areaId) => {
-  formData.value = {
-    ...getInitialState(formData.value.date),
-    areaId
-  }
+  localSelectedAreaId.value = areaId
 }, { immediate: true })
 
-watch(() => [formData.value.date, props.selectedAreaId], ([newDate, areaId]) => {
+watch(() => [formData.value.date, localSelectedAreaId.value], ([newDate, areaId]) => {
   const existingLog = props.logs.find((l) => l.date === newDate && (l.areaId || 'randuagung') === areaId)
   if (existingLog) {
     formData.value = {
-      ...getInitialState(newDate),
-      areaId,
+      ...getInitialState(newDate, areaId),
       ...JSON.parse(JSON.stringify(existingLog))
     }
     isEditMode.value = true
   } else {
-    formData.value = {
-      ...getInitialState(newDate),
-      areaId
-    }
+    formData.value = getInitialState(newDate, areaId)
     isEditMode.value = false
   }
 }, { immediate: true })
@@ -84,11 +78,12 @@ const dailyTotals = computed(() => teamCards.reduce((acc, team) => {
 const handleSubmit = () => {
   emit('submit', {
     ...JSON.parse(JSON.stringify(formData.value)),
-    areaId: props.selectedAreaId
+    areaId: localSelectedAreaId.value
   })
 }
 
 const selectArea = (areaId) => {
+  localSelectedAreaId.value = areaId
   emit('update:selectedAreaId', areaId)
 }
 </script>
@@ -134,7 +129,7 @@ const selectArea = (areaId) => {
               <span class="crud-area-select__copy">
                 <small>Area Input</small>
                 <select
-                  :value="selectedAreaId"
+                  :value="localSelectedAreaId"
                   class="crud-area-select__native"
                   aria-label="Pilih area input harian"
                   @change="selectArea($event.target.value)"
