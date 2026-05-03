@@ -42,9 +42,9 @@ const AREA_CONFIG = [
     id: 'mangliawan',
     name: 'Mangliawan',
     shortName: 'Mangliawan',
-    targetOdp: 0,
-    targetOdc: 0,
-    hasKnownTarget: false
+    targetOdp: 24,
+    targetOdc: 3,
+    hasKnownTarget: true
   }
 ]
 
