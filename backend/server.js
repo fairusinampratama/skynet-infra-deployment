@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 3000
+const DB_DRIVER = (process.env.DB_DRIVER || 'sqlite').toLowerCase()
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'database.sqlite')
 const ADMIN_PIN = process.env.ADMIN_PIN || '1234'
 const distPath = path.join(__dirname, '../dist')
@@ -70,6 +71,9 @@ app.use(cors())
 app.use(express.json())
 
 const normalizeLogAreaId = (log) => log.areaId || 'randuagung'
+const parseLogData = (data) => (typeof data === 'string' ? JSON.parse(data) : data)
+let db
+let mariaDbPool
 let resolveDatabaseReady
 let rejectDatabaseReady
 const databaseReady = new Promise((resolve, reject) => {
@@ -78,20 +82,24 @@ const databaseReady = new Promise((resolve, reject) => {
 })
 
 const dbRun = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err)
-      else resolve(this)
-    })
-  })
+  DB_DRIVER === 'mariadb'
+    ? mariaDbPool.execute(sql, params).then(([result]) => result)
+    : new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+          if (err) reject(err)
+          else resolve(this)
+        })
+      })
 
 const dbAll = (sql, params = []) =>
-  new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err)
-      else resolve(rows)
-    })
-  })
+  DB_DRIVER === 'mariadb'
+    ? mariaDbPool.execute(sql, params).then(([rows]) => rows)
+    : new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows)
+        })
+      })
 
 const dbAllFromFile = (databasePath, sql, params = []) =>
   new Promise((resolve, reject) => {
@@ -109,16 +117,32 @@ const dbAllFromFile = (databasePath, sql, params = []) =>
     })
   })
 
-const createAreaScopedDailyLogsTable = () =>
-  dbRun(`CREATE TABLE daily_logs (
+const createAreaScopedDailyLogsTable = () => {
+  if (DB_DRIVER === 'mariadb') {
+    return dbRun(`CREATE TABLE IF NOT EXISTS daily_logs (
+      id VARCHAR(128) PRIMARY KEY,
+      area_id VARCHAR(64) NOT NULL DEFAULT 'randuagung',
+      date DATE NOT NULL,
+      data JSON NOT NULL,
+      UNIQUE KEY daily_logs_area_date_unique (area_id, date)
+    )`)
+  }
+
+  return dbRun(`CREATE TABLE daily_logs (
     id TEXT PRIMARY KEY,
     area_id TEXT NOT NULL DEFAULT 'randuagung',
     date TEXT NOT NULL,
     data TEXT NOT NULL,
     UNIQUE(area_id, date)
   )`)
+}
 
 const ensureDailyLogsSchema = async () => {
+  if (DB_DRIVER === 'mariadb') {
+    await createAreaScopedDailyLogsTable()
+    return
+  }
+
   const columns = await dbAll("PRAGMA table_info(daily_logs)")
 
   if (!columns.length) {
@@ -163,7 +187,7 @@ const ensureDailyLogsSchema = async () => {
 }
 
 const normalizeImportedRow = (row) => {
-  const log = JSON.parse(row.data)
+  const log = parseLogData(row.data)
   const areaId = row.area_id || normalizeLogAreaId(log)
   return {
     ...log,
@@ -174,7 +198,7 @@ const normalizeImportedRow = (row) => {
 
 const importSeedRowsIfEmpty = async () => {
   const [{ total }] = await dbAll('SELECT COUNT(*) AS total FROM daily_logs')
-  if (total > 0) return
+  if (Number(total) > 0) return
 
   const sourcePath = findSeedDatabasePath()
   if (!sourcePath) {
@@ -193,10 +217,12 @@ const importSeedRowsIfEmpty = async () => {
   for (const row of sourceRows) {
     try {
       const nextLog = normalizeImportedRow(row)
-      await dbRun(
-        'INSERT OR REPLACE INTO daily_logs (id, area_id, date, data) VALUES (?, ?, ?, ?)',
-        [nextLog.id, nextLog.areaId, nextLog.date, JSON.stringify(nextLog)]
-      )
+      const sql = DB_DRIVER === 'mariadb'
+        ? `INSERT INTO daily_logs (id, area_id, date, data)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE id = VALUES(id), data = VALUES(data)`
+        : 'INSERT OR REPLACE INTO daily_logs (id, area_id, date, data) VALUES (?, ?, ?, ?)'
+      await dbRun(sql, [nextLog.id, nextLog.areaId, nextLog.date, JSON.stringify(nextLog)])
       imported += 1
     } catch (importErr) {
       console.error(`Skipping legacy log ${row.id}`, importErr.message)
@@ -211,8 +237,8 @@ const logDatabaseSnapshot = async () => {
     'SELECT id, area_id, date FROM daily_logs ORDER BY date DESC, area_id ASC LIMIT 5'
   )
   const [{ total }] = await dbAll('SELECT COUNT(*) AS total FROM daily_logs')
-  console.log(`SQLite daily_logs rows: ${total}`)
-  console.log(`SQLite latest rows: ${JSON.stringify(rows)}`)
+  console.log(`${DB_DRIVER} daily_logs rows: ${total}`)
+  console.log(`${DB_DRIVER} latest rows: ${JSON.stringify(rows)}`)
 }
 
 const waitForDatabase = async (req, res, next) => {
@@ -224,37 +250,71 @@ const waitForDatabase = async (req, res, next) => {
   }
 }
 
-const fetchDailyLogs = (req, res) => {
-  db.all('SELECT * FROM daily_logs ORDER BY area_id ASC, date ASC', [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message })
-    }
+const fetchDailyLogs = async (req, res) => {
+  try {
+    const rows = await dbAll('SELECT * FROM daily_logs ORDER BY area_id ASC, date ASC')
     const logs = rows.map(row => {
-      const log = JSON.parse(row.data)
+      const log = parseLogData(row.data)
       return {
         ...log,
         areaId: normalizeLogAreaId(log)
       }
     })
     res.json(logs)
-  })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 }
 
-// Initialize SQLite database
-const db = new sqlite3.Database(DB_PATH, (err) => {
-  if (err) {
-    console.error('Error opening database', err.message)
-    rejectDatabaseReady(err)
-  } else {
+const initializeMariaDb = async () => {
+  const mysql = await import('mysql2/promise')
+  mariaDbPool = mysql.createPool({
+    host: process.env.MARIADB_HOST || process.env.MYSQL_HOST || 'localhost',
+    port: Number(process.env.MARIADB_PORT || process.env.MYSQL_PORT || 3306),
+    user: process.env.MARIADB_USER || process.env.MYSQL_USER || 'root',
+    password: process.env.MARIADB_PASSWORD || process.env.MYSQL_PASSWORD || '',
+    database: process.env.MARIADB_DATABASE || process.env.MYSQL_DATABASE || 'skynet',
+    waitForConnections: true,
+    connectionLimit: Number(process.env.MARIADB_CONNECTION_LIMIT || 10)
+  })
+
+  await mariaDbPool.query('SELECT 1')
+  console.log(`Connected to MariaDB at ${process.env.MARIADB_HOST || process.env.MYSQL_HOST || 'localhost'}:${process.env.MARIADB_PORT || process.env.MYSQL_PORT || 3306}`)
+  await ensureDailyLogsSchema()
+  await importSeedRowsIfEmpty()
+  await logDatabaseSnapshot()
+}
+
+const initializeSqlite = () => new Promise((resolve, reject) => {
+  db = new sqlite3.Database(DB_PATH, (err) => {
+    if (err) {
+      reject(err)
+      return
+    }
+
     console.log(`Connected to SQLite database at ${DB_PATH}`)
-    ensureDailyLogsSchema()
-      .then(importSeedRowsIfEmpty)
-      .then(logDatabaseSnapshot)
-      .then(resolveDatabaseReady)
-      .catch((schemaErr) => {
-        console.error('Error initializing daily_logs table', schemaErr.message)
-        rejectDatabaseReady(schemaErr)
-      })
+    resolve()
+  })
+})
+
+const initializeDatabase = async () => {
+  if (DB_DRIVER === 'mariadb') {
+    await initializeMariaDb()
+    return
+  }
+
+  await initializeSqlite()
+  await ensureDailyLogsSchema()
+  await importSeedRowsIfEmpty()
+  await logDatabaseSnapshot()
+}
+
+initializeDatabase()
+  .then(resolveDatabaseReady)
+  .catch((err) => {
+  if (err) {
+    console.error('Error initializing database', err.message)
+    rejectDatabaseReady(err)
   }
 })
 
@@ -280,7 +340,7 @@ app.post('/api/verify-pin', (req, res) => {
 app.get('/api/logs', waitForDatabase, fetchDailyLogs)
 
 // POST /api/logs - Add or update a log
-app.post('/api/logs', waitForDatabase, (req, res) => {
+app.post('/api/logs', waitForDatabase, async (req, res) => {
   const log = req.body
   if (!log.date) {
     return res.status(400).json({ error: 'Missing date' })
@@ -293,25 +353,28 @@ app.post('/api/logs', waitForDatabase, (req, res) => {
     id: log.id || `${areaId}-${log.date}`
   }
 
-  const stmt = db.prepare('INSERT OR REPLACE INTO daily_logs (id, area_id, date, data) VALUES (?, ?, ?, ?)')
-  stmt.run([nextLog.id, areaId, nextLog.date, JSON.stringify(nextLog)], function (err) {
-    if (err) {
-      return res.status(500).json({ error: err.message })
-    }
+  try {
+    const sql = DB_DRIVER === 'mariadb'
+      ? `INSERT INTO daily_logs (id, area_id, date, data)
+          VALUES (?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE id = VALUES(id), data = VALUES(data)`
+      : 'INSERT OR REPLACE INTO daily_logs (id, area_id, date, data) VALUES (?, ?, ?, ?)'
+    await dbRun(sql, [nextLog.id, areaId, nextLog.date, JSON.stringify(nextLog)])
     res.json({ message: 'Log saved successfully', id: nextLog.id })
-  })
-  stmt.finalize()
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
 // DELETE /api/logs/:id - Delete a log
-app.delete('/api/logs/:id', waitForDatabase, (req, res) => {
+app.delete('/api/logs/:id', waitForDatabase, async (req, res) => {
   const id = req.params.id
-  db.run('DELETE FROM daily_logs WHERE id = ?', id, function (err) {
-    if (err) {
-      return res.status(500).json({ error: err.message })
-    }
-    res.json({ message: 'Log deleted successfully', changes: this.changes })
-  })
+  try {
+    const result = await dbRun('DELETE FROM daily_logs WHERE id = ?', [id])
+    res.json({ message: 'Log deleted successfully', changes: result.changes || result.affectedRows || 0 })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
 // ============================================
