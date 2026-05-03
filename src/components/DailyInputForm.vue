@@ -1,6 +1,6 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { CalendarDays, Check, ChevronDown, DatabaseZap, MapPinned, PencilLine, RadioTower, ShieldEllipsis } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
+import { CalendarDays, ChevronDown, DatabaseZap, MapPinned, PencilLine, RadioTower, ShieldEllipsis } from 'lucide-vue-next'
 
 const props = defineProps({
   logs: {
@@ -42,8 +42,6 @@ const getInitialState = (date = today) => ({
 
 const formData = ref(getInitialState())
 const isEditMode = ref(false)
-const isAreaMenuOpen = ref(false)
-const areaSelectRef = ref(null)
 
 const selectedArea = computed(() =>
   props.areaOptions.find((area) => area.id === props.selectedAreaId) || props.areaOptions[0] || null
@@ -92,22 +90,7 @@ const handleSubmit = () => {
 
 const selectArea = (areaId) => {
   emit('update:selectedAreaId', areaId)
-  isAreaMenuOpen.value = false
 }
-
-const closeAreaMenu = (event) => {
-  if (!areaSelectRef.value?.contains(event.target)) {
-    isAreaMenuOpen.value = false
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('click', closeAreaMenu)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('click', closeAreaMenu)
-})
 </script>
 
 <template>
@@ -143,20 +126,8 @@ onUnmounted(() => {
       <div class="crud-control-grid">
         <div class="crud-date-wrap">
           <label class="crud-label">Area</label>
-          <div
-            ref="areaSelectRef"
-            class="crud-area-select"
-            @keydown.escape="isAreaMenuOpen = false"
-          >
-            <button
-              type="button"
-              class="crud-area-select__trigger"
-              :class="{ 'crud-area-select__trigger--open': isAreaMenuOpen }"
-              aria-haspopup="listbox"
-              :aria-expanded="isAreaMenuOpen"
-              @mousedown.prevent
-              @click.stop="isAreaMenuOpen = !isAreaMenuOpen"
-            >
+          <div class="crud-area-select">
+            <label class="crud-area-select__trigger">
               <span class="crud-area-select__icon">
                 <MapPinned :size="18" />
               </span>
@@ -168,32 +139,18 @@ onUnmounted(() => {
               <ChevronDown
                 :size="18"
                 class="crud-area-select__chevron"
-                :class="{ 'crud-area-select__chevron--open': isAreaMenuOpen }"
               />
-            </button>
-
-            <div v-if="isAreaMenuOpen" class="crud-area-select__panel" role="listbox">
-              <button
-                v-for="area in areaOptions"
-                :key="area.id"
-                type="button"
-                class="crud-area-select__option"
-                :class="{ 'crud-area-select__option--active': selectedAreaId === area.id }"
-                role="option"
-                :aria-selected="selectedAreaId === area.id"
-                @mousedown.prevent
-                @click.stop="selectArea(area.id)"
+              <select
+                :value="selectedAreaId"
+                class="crud-area-select__native"
+                aria-label="Pilih area input harian"
+                @change="selectArea($event.target.value)"
               >
-                <span class="crud-area-select__option-icon">
-                  <MapPinned :size="15" />
-                </span>
-                <span class="crud-area-select__option-copy">
-                  <strong>{{ area.name }}</strong>
-                  <small>{{ area.splitTargetLabel }}</small>
-                </span>
-                <Check v-if="selectedAreaId === area.id" :size="16" class="crud-area-select__check" />
-              </button>
-            </div>
+                <option v-for="area in areaOptions" :key="area.id" :value="area.id">
+                  {{ area.name }} - {{ area.splitTargetLabel }}
+                </option>
+              </select>
+            </label>
           </div>
         </div>
 
@@ -420,6 +377,7 @@ onUnmounted(() => {
 }
 
 .crud-area-select__trigger {
+  position: relative;
   display: grid;
   width: 100%;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -432,6 +390,7 @@ onUnmounted(() => {
     linear-gradient(180deg, rgba(7, 31, 72, 0.92), rgba(4, 18, 47, 0.92));
   padding: 0.72rem 0.82rem;
   color: #eef6ff;
+  cursor: pointer;
   text-align: left;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
@@ -511,89 +470,16 @@ onUnmounted(() => {
 
 .crud-area-select__chevron {
   color: rgba(223, 239, 255, 0.92);
-  transition: transform 0.18s ease;
+  pointer-events: none;
 }
 
-.crud-area-select__chevron--open {
-  transform: rotate(180deg);
-}
-
-.crud-area-select__panel {
+.crud-area-select__native {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 0.55rem);
-  z-index: 25;
-  overflow: hidden;
-  border-radius: 1.05rem;
-  border: 1px solid rgba(96, 165, 250, 0.34);
-  background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 32%),
-    linear-gradient(180deg, rgba(7, 27, 62, 0.98), rgba(4, 14, 37, 0.98));
-  padding: 0.42rem;
-  box-shadow:
-    0 26px 54px -30px rgba(2, 6, 23, 0.96),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
-}
-
-.crud-area-select__option {
-  display: grid;
+  inset: 0;
   width: 100%;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.7rem;
-  border: 0;
-  border-radius: 0.82rem;
-  background: transparent;
-  color: #dcecff;
+  height: 100%;
   cursor: pointer;
-  padding: 0.75rem 0.78rem;
-  text-align: left;
-  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
-}
-
-.crud-area-select__option:hover,
-.crud-area-select__option--active {
-  background: linear-gradient(135deg, rgba(29, 78, 216, 0.95), rgba(8, 145, 178, 0.94));
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-.crud-area-select__option-icon {
-  width: 2rem;
-  height: 2rem;
-  background: rgba(37, 99, 235, 0.18);
-  color: #9dc8ff;
-}
-
-.crud-area-select__option:hover .crud-area-select__option-icon,
-.crud-area-select__option--active .crud-area-select__option-icon {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-}
-
-.crud-area-select__option-copy strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.94rem;
-  font-weight: 900;
-}
-
-.crud-area-select__option-copy small {
-  margin-top: 0.14rem;
-  color: rgba(190, 211, 244, 0.72);
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.crud-area-select__option:hover .crud-area-select__option-copy small,
-.crud-area-select__option--active .crud-area-select__option-copy small {
-  color: rgba(239, 246, 255, 0.84);
-}
-
-.crud-area-select__check {
-  color: currentColor;
+  opacity: 0;
 }
 
 .crud-area-note {

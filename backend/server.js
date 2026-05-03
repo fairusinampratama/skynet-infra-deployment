@@ -39,64 +39,99 @@ app.use(cors())
 app.use(express.json())
 
 const normalizeLogAreaId = (log) => log.areaId || 'randuagung'
+let databaseReady = Promise.resolve()
 
-const migrateDailyLogsTable = () => {
-  db.all("PRAGMA table_info(daily_logs)", [], (err, columns) => {
-    if (err) {
-      console.error('Error reading daily_logs schema', err.message)
-      return
-    }
-
-    const hasAreaColumn = columns.some((column) => column.name === 'area_id')
-    if (hasAreaColumn) return
-
-    db.serialize(() => {
-      db.run(`CREATE TABLE IF NOT EXISTS daily_logs_area (
-        id TEXT PRIMARY KEY,
-        area_id TEXT NOT NULL DEFAULT 'randuagung',
-        date TEXT NOT NULL,
-        data TEXT NOT NULL,
-        UNIQUE(area_id, date)
-      )`)
-
-      db.all('SELECT * FROM daily_logs ORDER BY date ASC', [], (selectErr, rows) => {
-        if (selectErr) {
-          console.error('Error reading old daily_logs data', selectErr.message)
-          return
-        }
-
-        const stmt = db.prepare('INSERT OR REPLACE INTO daily_logs_area (id, area_id, date, data) VALUES (?, ?, ?, ?)')
-        rows.forEach((row) => {
-          try {
-            const log = JSON.parse(row.data)
-            const areaId = normalizeLogAreaId(log)
-            const nextLog = {
-              ...log,
-              areaId,
-              id: log.id || `${areaId}-${log.date}`
-            }
-            stmt.run(nextLog.id, areaId, nextLog.date, JSON.stringify(nextLog))
-          } catch (parseErr) {
-            console.error(`Skipping invalid log ${row.id}`, parseErr.message)
-          }
-        })
-        stmt.finalize((finalizeErr) => {
-          if (finalizeErr) {
-            console.error('Error finalizing migration statement', finalizeErr.message)
-            return
-          }
-
-          db.run('DROP TABLE daily_logs')
-          db.run('ALTER TABLE daily_logs_area RENAME TO daily_logs', (renameErr) => {
-            if (renameErr) {
-              console.error('Error renaming migrated daily_logs table', renameErr.message)
-            } else {
-              console.log('Migrated daily_logs table to area-scoped schema')
-            }
-          })
-        })
-      })
+const dbRun = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.run(sql, params, function (err) {
+      if (err) reject(err)
+      else resolve(this)
     })
+  })
+
+const dbAll = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err)
+      else resolve(rows)
+    })
+  })
+
+const createAreaScopedDailyLogsTable = () =>
+  dbRun(`CREATE TABLE daily_logs (
+    id TEXT PRIMARY KEY,
+    area_id TEXT NOT NULL DEFAULT 'randuagung',
+    date TEXT NOT NULL,
+    data TEXT NOT NULL,
+    UNIQUE(area_id, date)
+  )`)
+
+const ensureDailyLogsSchema = async () => {
+  const columns = await dbAll("PRAGMA table_info(daily_logs)")
+
+  if (!columns.length) {
+    await createAreaScopedDailyLogsTable()
+    return
+  }
+
+  const hasAreaColumn = columns.some((column) => column.name === 'area_id')
+  if (hasAreaColumn) return
+
+  await dbRun('DROP TABLE IF EXISTS daily_logs_area')
+  await dbRun(`CREATE TABLE daily_logs_area (
+    id TEXT PRIMARY KEY,
+    area_id TEXT NOT NULL DEFAULT 'randuagung',
+    date TEXT NOT NULL,
+    data TEXT NOT NULL,
+    UNIQUE(area_id, date)
+  )`)
+
+  const rows = await dbAll('SELECT * FROM daily_logs ORDER BY date ASC')
+  for (const row of rows) {
+    try {
+      const log = JSON.parse(row.data)
+      const areaId = normalizeLogAreaId(log)
+      const nextLog = {
+        ...log,
+        areaId,
+        id: log.id || `${areaId}-${log.date}`
+      }
+      await dbRun(
+        'INSERT OR REPLACE INTO daily_logs_area (id, area_id, date, data) VALUES (?, ?, ?, ?)',
+        [nextLog.id, areaId, nextLog.date, JSON.stringify(nextLog)]
+      )
+    } catch (parseErr) {
+      console.error(`Skipping invalid log ${row.id}`, parseErr.message)
+    }
+  }
+
+  await dbRun('DROP TABLE daily_logs')
+  await dbRun('ALTER TABLE daily_logs_area RENAME TO daily_logs')
+  console.log('Migrated daily_logs table to area-scoped schema')
+}
+
+const waitForDatabase = async (req, res, next) => {
+  try {
+    await databaseReady
+    next()
+  } catch (err) {
+    res.status(500).json({ error: `Database initialization failed: ${err.message}` })
+  }
+}
+
+const fetchDailyLogs = (req, res) => {
+  db.all('SELECT * FROM daily_logs ORDER BY area_id ASC, date ASC', [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message })
+    }
+    const logs = rows.map(row => {
+      const log = JSON.parse(row.data)
+      return {
+        ...log,
+        areaId: normalizeLogAreaId(log)
+      }
+    })
+    res.json(logs)
   })
 }
 
@@ -106,18 +141,9 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
     console.error('Error opening database', err.message)
   } else {
     console.log(`Connected to SQLite database at ${DB_PATH}`)
-    db.run(`CREATE TABLE IF NOT EXISTS daily_logs (
-      id TEXT PRIMARY KEY,
-      area_id TEXT NOT NULL DEFAULT 'randuagung',
-      date TEXT NOT NULL,
-      data TEXT NOT NULL,
-      UNIQUE(area_id, date)
-    )`, (err) => {
-      if (err) {
-        console.error('Error creating table', err.message)
-      } else {
-        migrateDailyLogsTable()
-      }
+    databaseReady = ensureDailyLogsSchema().catch((schemaErr) => {
+      console.error('Error initializing daily_logs table', schemaErr.message)
+      throw schemaErr
     })
   }
 })
@@ -141,24 +167,10 @@ app.post('/api/verify-pin', (req, res) => {
 })
 
 // GET /api/logs - Fetch all logs
-app.get('/api/logs', (req, res) => {
-  db.all('SELECT * FROM daily_logs ORDER BY area_id ASC, date ASC', [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message })
-    }
-    const logs = rows.map(row => {
-      const log = JSON.parse(row.data)
-      return {
-        ...log,
-        areaId: normalizeLogAreaId(log)
-      }
-    })
-    res.json(logs)
-  })
-})
+app.get('/api/logs', waitForDatabase, fetchDailyLogs)
 
 // POST /api/logs - Add or update a log
-app.post('/api/logs', (req, res) => {
+app.post('/api/logs', waitForDatabase, (req, res) => {
   const log = req.body
   if (!log.id || !log.date) {
     return res.status(400).json({ error: 'Missing id or date' })
@@ -182,7 +194,7 @@ app.post('/api/logs', (req, res) => {
 })
 
 // DELETE /api/logs/:id - Delete a log
-app.delete('/api/logs/:id', (req, res) => {
+app.delete('/api/logs/:id', waitForDatabase, (req, res) => {
   const id = req.params.id
   db.run('DELETE FROM daily_logs WHERE id = ?', id, function (err) {
     if (err) {
