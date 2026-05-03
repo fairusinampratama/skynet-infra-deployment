@@ -146,7 +146,6 @@ onUnmounted(() => {
           <div
             ref="areaSelectRef"
             class="crud-area-select"
-            @focusout="isAreaMenuOpen = false"
             @keydown.escape="isAreaMenuOpen = false"
           >
             <button
@@ -182,8 +181,7 @@ onUnmounted(() => {
                 :class="{ 'crud-area-select__option--active': selectedAreaId === area.id }"
                 role="option"
                 :aria-selected="selectedAreaId === area.id"
-                @mousedown.prevent
-                @click="selectArea(area.id)"
+                @pointerdown.prevent="selectArea(area.id)"
               >
                 <span class="crud-area-select__option-icon">
                   <MapPinned :size="15" />
