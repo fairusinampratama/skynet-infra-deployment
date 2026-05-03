@@ -8,6 +8,8 @@ import { Lock, ShieldCheck, Sparkles } from 'lucide-vue-next'
 
 const {
   augmentedLogs,
+  areaOptions,
+  selectedAreaId,
   addLog,
   deleteLog
 } = useDashboard()
@@ -92,7 +94,12 @@ const formatVerifiedTime = (timeStr) => {
 
     <template v-if="isVerified">
       <section>
-        <DailyInputForm :logs="augmentedLogs" @submit="addLog" />
+        <DailyInputForm
+          :logs="augmentedLogs"
+          :area-options="areaOptions"
+          v-model:selected-area-id="selectedAreaId"
+          @submit="addLog"
+        />
       </section>
 
       <section>

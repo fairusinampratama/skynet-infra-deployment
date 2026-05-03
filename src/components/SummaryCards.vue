@@ -1,11 +1,12 @@
 <script setup>
 import { computed } from "vue";
-import { Target, Activity, Percent, CalendarClock, Skull } from "lucide-vue-next";
+import { Target, Activity, Percent, CalendarClock, Skull, Home } from "lucide-vue-next";
 
 const props = defineProps({
   target: { type: Number, required: true },
   targetOdp: { type: Number, required: true },
   targetOdc: { type: Number, required: true },
+  targetHomepass: { type: Number, required: true },
   installed: { type: Number, required: true },
   installedOdp: { type: Number, required: true },
   installedOdc: { type: Number, required: true },
@@ -20,7 +21,7 @@ const remainingTotal = computed(() => props.remainingOdp + props.remainingOdc);
 const progressWidth = computed(() => Math.min(Math.max(props.progress, 0), 100));
 const installedRatioLabel = computed(() => (props.hasKnownTarget ? `${props.installed} / ${props.target}` : "Target belum diisi"));
 const targetLabel = computed(() => (props.hasKnownTarget ? props.target : "Belum diisi"));
-const targetSplitLabel = computed(() => (props.hasKnownTarget ? `ODP ${props.targetOdp} | ODC ${props.targetOdc}` : "ODP & ODC menyusul"));
+const targetSplitLabel = computed(() => (props.hasKnownTarget ? `ODP ${props.targetOdp} | ODC ${props.targetOdc} | HP ${props.targetHomepass}` : "ODP, ODC & homepass menyusul"));
 const remainingTotalLabel = computed(() => (props.hasKnownTarget ? remainingTotal.value : "-"));
 const statusLabel = computed(() => {
   if (!props.hasKnownTarget) return "Menunggu Target";
@@ -91,6 +92,28 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
         <div class="kpi-stack-item">
           <span>ODC</span>
           <strong>{{ hasKnownTarget ? targetOdc : '-' }}</strong>
+        </div>
+        <div class="kpi-stack-item">
+          <span>Homepass</span>
+          <strong>{{ hasKnownTarget ? targetHomepass : '-' }}</strong>
+        </div>
+      </div>
+    </article>
+
+    <article class="kpi-card kpi-card--metric kpi-card--cyan">
+      <div class="kpi-head">
+        <div>
+          <p class="kpi-eyebrow">Target Homepass</p>
+          <p class="kpi-metric-value" :class="{ 'kpi-value--text': !hasKnownTarget }">{{ hasKnownTarget ? targetHomepass : 'Belum diisi' }}</p>
+        </div>
+        <div class="kpi-icon-badge kpi-icon-badge--cyan">
+          <Home :size="22" />
+        </div>
+      </div>
+      <div class="kpi-status-box">
+        <div class="kpi-stack-item kpi-stack-item--plain">
+          <span>Rasio</span>
+          <strong>{{ hasKnownTarget ? `${targetHomepass} HP` : '-' }}</strong>
         </div>
       </div>
     </article>
@@ -222,7 +245,8 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 }
 
 .kpi-card--banner {
-  grid-column: 5 / span 8;
+  grid-column: 7 / span 6;
+  grid-row: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -250,7 +274,7 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 
 .kpi-card--violet {
   border-color: rgba(157, 78, 221, 0.42);
-  grid-column: 7 / span 2;
+  grid-column: 9 / span 2;
   grid-row: 1;
   background:
     radial-gradient(circle at top left, rgba(139, 92, 246, 0.14), transparent 28%),
@@ -259,7 +283,7 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 
 .kpi-card--green {
   border-color: rgba(16, 185, 129, 0.42);
-  grid-column: 9 / span 2;
+  grid-column: 11 / span 2;
   grid-row: 1;
   background:
     radial-gradient(circle at top left, rgba(16, 185, 129, 0.16), transparent 28%),
@@ -268,11 +292,20 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 
 .kpi-card--amber {
   border-color: rgba(245, 158, 11, 0.36);
-  grid-column: 11 / span 2;
-  grid-row: 1;
+  grid-column: 5 / span 2;
+  grid-row: 2;
   background:
     radial-gradient(circle at top left, rgba(245, 158, 11, 0.18), transparent 28%),
     linear-gradient(180deg, rgba(43, 29, 9, 0.98), rgba(24, 18, 11, 0.98));
+}
+
+.kpi-card--cyan {
+  border-color: rgba(6, 182, 212, 0.4);
+  grid-column: 7 / span 2;
+  grid-row: 1;
+  background:
+    radial-gradient(circle at top left, rgba(6, 182, 212, 0.15), transparent 28%),
+    linear-gradient(180deg, rgba(7, 38, 52, 0.98), rgba(5, 20, 31, 0.98));
 }
 
 .kpi-card--green .kpi-head,
@@ -340,6 +373,11 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 .kpi-icon-badge--green {
   background: linear-gradient(180deg, rgba(28, 152, 109, 0.9), rgba(18, 94, 74, 0.86));
   color: #d4ffeb;
+}
+
+.kpi-icon-badge--cyan {
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.9), rgba(8, 92, 123, 0.86));
+  color: #e0fbff;
 }
 
 .kpi-icon-badge--amber {
@@ -556,18 +594,21 @@ const isUrgentStatus = computed(() => statusLabel.value === "Mepet");
 }
 
 .kpi-card--blue .kpi-stack-item,
+.kpi-card--cyan .kpi-stack-item,
 .kpi-card--violet .kpi-stack-item {
   min-height: 3rem;
   border-radius: 1.05rem;
 }
 
 .kpi-card--blue .kpi-stack-item span,
+.kpi-card--cyan .kpi-stack-item span,
 .kpi-card--violet .kpi-stack-item span {
   font-size: 0.84rem;
   letter-spacing: 0.16em;
 }
 
 .kpi-card--blue .kpi-stack-item strong,
+.kpi-card--cyan .kpi-stack-item strong,
 .kpi-card--violet .kpi-stack-item strong {
   font-size: 0.96rem;
 }
