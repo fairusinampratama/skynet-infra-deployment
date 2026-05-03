@@ -12,6 +12,7 @@ import SkynetLogo from '../components/SkynetLogo.vue'
 const {
   TARGET_ODP,
   TARGET_ODC,
+  TARGET_HOMEPASS,
   TOTAL_TARGET,
   activeArea,
   selectedAreaId,
@@ -19,7 +20,7 @@ const {
   totalOdc,
   totalInstalled,
   progressPercent,
-  logs,
+  activeAreaLogs,
   fetchLogsFailed,
   remainingDays,
   remainingOdp,
@@ -33,16 +34,16 @@ const route = useRoute()
 const TOTAL_REWARD = 20000000
 const REWARD_TARGET = 411
 
-const latestLog = computed(() => logs.value[logs.value.length - 1] ?? null)
+const latestLog = computed(() => activeAreaLogs.value[activeAreaLogs.value.length - 1] ?? null)
 const nonRankingTeams = computed(() => teamTotals.value.filter((team) => team.rankingEligible === false))
-const hasTeamProgress = computed(() => activeArea.value.id === 'randuagung')
+const hasTeamProgress = computed(() => activeArea.value.usesTeamProgress)
 const activeAreaTarget = computed(() => TARGET_ODP.value + TARGET_ODC.value)
 const activeAreaProgressWidth = computed(() => Math.min(Math.max(progressPercent.value, 0), 100))
 const activeAreaTargetLabel = computed(() =>
   activeArea.value.hasKnownTarget ? `${activeAreaTarget.value} titik` : 'Belum diisi'
 )
 const activeAreaSplitLabel = computed(() =>
-  activeArea.value.hasKnownTarget ? `ODP ${TARGET_ODP.value} | ODC ${TARGET_ODC.value}` : 'Target ODP & ODC menyusul'
+  activeArea.value.hasKnownTarget ? `ODP ${TARGET_ODP.value} | ODC ${TARGET_ODC.value} | HP ${TARGET_HOMEPASS.value}` : 'Target ODP, ODC & homepass menyusul'
 )
 
 watch(
@@ -188,6 +189,7 @@ const latestTimeLabel = computed(() => {
         :target="TOTAL_TARGET"
         :target-odp="TARGET_ODP"
         :target-odc="TARGET_ODC"
+        :target-homepass="TARGET_HOMEPASS"
         :installed="totalInstalled"
         :installed-odp="totalOdp"
         :installed-odc="totalOdc"

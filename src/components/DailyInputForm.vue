@@ -1,15 +1,23 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { CalendarDays, DatabaseZap, PencilLine, RadioTower, ShieldEllipsis } from 'lucide-vue-next'
+import { CalendarDays, DatabaseZap, MapPinned, PencilLine, RadioTower, ShieldEllipsis } from 'lucide-vue-next'
 
 const props = defineProps({
   logs: {
     type: Array,
     required: true
+  },
+  areaOptions: {
+    type: Array,
+    required: true
+  },
+  selectedAreaId: {
+    type: String,
+    required: true
   }
 })
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit', 'update:selectedAreaId'])
 
 const today = new Date().toISOString().split('T')[0]
 
@@ -23,6 +31,7 @@ const teamCards = [
 
 const getInitialState = (date = today) => ({
   date,
+  areaId: props.selectedAreaId,
   tim1: { odp: 0, odc: 0 },
   tim2: { odp: 0, odc: 0 },
   tim3: { odp: 0, odc: 0 },
@@ -34,16 +43,31 @@ const getInitialState = (date = today) => ({
 const formData = ref(getInitialState())
 const isEditMode = ref(false)
 
-watch(() => formData.value.date, (newDate) => {
-  const existingLog = props.logs.find((l) => l.date === newDate)
+const selectedAreaName = computed(() =>
+  props.areaOptions.find((area) => area.id === props.selectedAreaId)?.name || 'Area'
+)
+
+watch(() => props.selectedAreaId, (areaId) => {
+  formData.value = {
+    ...getInitialState(formData.value.date),
+    areaId
+  }
+}, { immediate: true })
+
+watch(() => [formData.value.date, props.selectedAreaId], ([newDate, areaId]) => {
+  const existingLog = props.logs.find((l) => l.date === newDate && (l.areaId || 'randuagung') === areaId)
   if (existingLog) {
     formData.value = {
       ...getInitialState(newDate),
+      areaId,
       ...JSON.parse(JSON.stringify(existingLog))
     }
     isEditMode.value = true
   } else {
-    formData.value = getInitialState(newDate)
+    formData.value = {
+      ...getInitialState(newDate),
+      areaId
+    }
     isEditMode.value = false
   }
 }, { immediate: true })
@@ -55,7 +79,10 @@ const dailyTotals = computed(() => teamCards.reduce((acc, team) => {
 }, { odp: 0, odc: 0 }))
 
 const handleSubmit = () => {
-  emit('submit', JSON.parse(JSON.stringify(formData.value)))
+  emit('submit', {
+    ...JSON.parse(JSON.stringify(formData.value)),
+    areaId: props.selectedAreaId
+  })
 }
 </script>
 
@@ -89,17 +116,40 @@ const handleSubmit = () => {
     </div>
 
     <form @submit.prevent="handleSubmit" class="crud-form">
-      <div class="crud-date-wrap">
-        <label class="crud-label">Tanggal</label>
-        <div class="crud-date-box">
-          <CalendarDays :size="18" class="crud-date-icon" />
-          <input
-            v-model="formData.date"
-            type="date"
-            required
-            class="crud-input crud-input--date"
-          >
+      <div class="crud-control-grid">
+        <div class="crud-date-wrap">
+          <label class="crud-label">Area</label>
+          <div class="crud-date-box">
+            <MapPinned :size="18" class="crud-date-icon" />
+            <select
+              :value="selectedAreaId"
+              class="crud-input crud-input--date"
+              @change="$emit('update:selectedAreaId', $event.target.value)"
+            >
+              <option v-for="area in areaOptions" :key="area.id" :value="area.id">
+                {{ area.name }}
+              </option>
+            </select>
+          </div>
         </div>
+
+        <div class="crud-date-wrap">
+          <label class="crud-label">Tanggal</label>
+          <div class="crud-date-box">
+            <CalendarDays :size="18" class="crud-date-icon" />
+            <input
+              v-model="formData.date"
+              type="date"
+              required
+              class="crud-input crud-input--date"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="crud-area-note">
+        <MapPinned :size="15" />
+        <span>Input yang disimpan akan masuk ke area {{ selectedAreaName }}.</span>
       </div>
 
       <div class="crud-team-grid">
@@ -272,6 +322,13 @@ const handleSubmit = () => {
   margin-bottom: 1.1rem;
 }
 
+.crud-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 20rem));
+  gap: 1rem;
+  align-items: end;
+}
+
 .crud-label {
   display: block;
   margin-bottom: 0.5rem;
@@ -291,6 +348,20 @@ const handleSubmit = () => {
   border: 1px solid rgba(76, 116, 184, 0.32);
   background: rgba(6, 23, 56, 0.72);
   padding: 0 0.9rem;
+}
+
+.crud-area-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(76, 116, 184, 0.28);
+  background: rgba(9, 31, 70, 0.62);
+  padding: 0.55rem 0.8rem;
+  color: #d7e7ff;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .crud-date-icon {
@@ -431,6 +502,10 @@ const handleSubmit = () => {
 
   .crud-mini-stats {
     min-width: 0;
+  }
+
+  .crud-control-grid {
+    grid-template-columns: 1fr;
   }
 
   .crud-team-grid {

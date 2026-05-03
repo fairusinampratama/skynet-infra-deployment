@@ -38,6 +38,68 @@ const ensureFrontendBuild = () => {
 app.use(cors())
 app.use(express.json())
 
+const normalizeLogAreaId = (log) => log.areaId || 'randuagung'
+
+const migrateDailyLogsTable = () => {
+  db.all("PRAGMA table_info(daily_logs)", [], (err, columns) => {
+    if (err) {
+      console.error('Error reading daily_logs schema', err.message)
+      return
+    }
+
+    const hasAreaColumn = columns.some((column) => column.name === 'area_id')
+    if (hasAreaColumn) return
+
+    db.serialize(() => {
+      db.run(`CREATE TABLE IF NOT EXISTS daily_logs_area (
+        id TEXT PRIMARY KEY,
+        area_id TEXT NOT NULL DEFAULT 'randuagung',
+        date TEXT NOT NULL,
+        data TEXT NOT NULL,
+        UNIQUE(area_id, date)
+      )`)
+
+      db.all('SELECT * FROM daily_logs ORDER BY date ASC', [], (selectErr, rows) => {
+        if (selectErr) {
+          console.error('Error reading old daily_logs data', selectErr.message)
+          return
+        }
+
+        const stmt = db.prepare('INSERT OR REPLACE INTO daily_logs_area (id, area_id, date, data) VALUES (?, ?, ?, ?)')
+        rows.forEach((row) => {
+          try {
+            const log = JSON.parse(row.data)
+            const areaId = normalizeLogAreaId(log)
+            const nextLog = {
+              ...log,
+              areaId,
+              id: log.id || `${areaId}-${log.date}`
+            }
+            stmt.run(nextLog.id, areaId, nextLog.date, JSON.stringify(nextLog))
+          } catch (parseErr) {
+            console.error(`Skipping invalid log ${row.id}`, parseErr.message)
+          }
+        })
+        stmt.finalize((finalizeErr) => {
+          if (finalizeErr) {
+            console.error('Error finalizing migration statement', finalizeErr.message)
+            return
+          }
+
+          db.run('DROP TABLE daily_logs')
+          db.run('ALTER TABLE daily_logs_area RENAME TO daily_logs', (renameErr) => {
+            if (renameErr) {
+              console.error('Error renaming migrated daily_logs table', renameErr.message)
+            } else {
+              console.log('Migrated daily_logs table to area-scoped schema')
+            }
+          })
+        })
+      })
+    })
+  })
+}
+
 // Initialize SQLite database
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
@@ -46,11 +108,15 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
     console.log(`Connected to SQLite database at ${DB_PATH}`)
     db.run(`CREATE TABLE IF NOT EXISTS daily_logs (
       id TEXT PRIMARY KEY,
-      date TEXT UNIQUE,
-      data TEXT NOT NULL
+      area_id TEXT NOT NULL DEFAULT 'randuagung',
+      date TEXT NOT NULL,
+      data TEXT NOT NULL,
+      UNIQUE(area_id, date)
     )`, (err) => {
       if (err) {
         console.error('Error creating table', err.message)
+      } else {
+        migrateDailyLogsTable()
       }
     })
   }
@@ -76,11 +142,17 @@ app.post('/api/verify-pin', (req, res) => {
 
 // GET /api/logs - Fetch all logs
 app.get('/api/logs', (req, res) => {
-  db.all('SELECT * FROM daily_logs ORDER BY date ASC', [], (err, rows) => {
+  db.all('SELECT * FROM daily_logs ORDER BY area_id ASC, date ASC', [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message })
     }
-    const logs = rows.map(row => JSON.parse(row.data))
+    const logs = rows.map(row => {
+      const log = JSON.parse(row.data)
+      return {
+        ...log,
+        areaId: normalizeLogAreaId(log)
+      }
+    })
     res.json(logs)
   })
 })
@@ -92,12 +164,19 @@ app.post('/api/logs', (req, res) => {
     return res.status(400).json({ error: 'Missing id or date' })
   }
 
-  const stmt = db.prepare('INSERT OR REPLACE INTO daily_logs (id, date, data) VALUES (?, ?, ?)')
-  stmt.run([log.id, log.date, JSON.stringify(log)], function (err) {
+  const areaId = normalizeLogAreaId(log)
+  const nextLog = {
+    ...log,
+    areaId,
+    id: log.id || `${areaId}-${log.date}`
+  }
+
+  const stmt = db.prepare('INSERT OR REPLACE INTO daily_logs (id, area_id, date, data) VALUES (?, ?, ?, ?)')
+  stmt.run([nextLog.id, areaId, nextLog.date, JSON.stringify(nextLog)], function (err) {
     if (err) {
       return res.status(500).json({ error: err.message })
     }
-    res.json({ message: 'Log saved successfully', id: log.id })
+    res.json({ message: 'Log saved successfully', id: nextLog.id })
   })
   stmt.finalize()
 })
