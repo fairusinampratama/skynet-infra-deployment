@@ -155,7 +155,7 @@ onUnmounted(() => {
               aria-haspopup="listbox"
               :aria-expanded="isAreaMenuOpen"
               @mousedown.prevent
-              @click="isAreaMenuOpen = !isAreaMenuOpen"
+              @click.stop="isAreaMenuOpen = !isAreaMenuOpen"
             >
               <span class="crud-area-select__icon">
                 <MapPinned :size="18" />
@@ -181,7 +181,8 @@ onUnmounted(() => {
                 :class="{ 'crud-area-select__option--active': selectedAreaId === area.id }"
                 role="option"
                 :aria-selected="selectedAreaId === area.id"
-                @pointerdown.prevent="selectArea(area.id)"
+                @mousedown.prevent
+                @click.stop="selectArea(area.id)"
               >
                 <span class="crud-area-select__option-icon">
                   <MapPinned :size="15" />
