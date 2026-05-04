@@ -20,6 +20,9 @@ COPY --from=build /app/dist ./dist
 # Copy the Express backend
 COPY backend/ ./backend/
 
+# Copy operational import scripts
+COPY scripts/ ./scripts/
+
 # Ensure the database file can be created and persisted in a dedicated data directory
 # Coolify will mount a volume here instead of over the source code
 RUN mkdir -p /app/data && chown -R node:node /app/data
