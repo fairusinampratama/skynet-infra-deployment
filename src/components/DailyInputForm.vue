@@ -135,24 +135,25 @@ const handleAreaChange = (event) => {
               </span>
               <span class="crud-area-select__copy">
                 <small>Area Input</small>
-                <select
-                  :key="localSelectedAreaId"
-                  v-model="localSelectedAreaId"
-                  class="crud-area-select__native"
-                  aria-label="Pilih area input harian"
-                  autocomplete="off"
-                  @change="handleAreaChange"
-                >
-                  <option v-for="area in areaOptions" :key="area.id" :value="area.id">
-                    {{ area.name }}
-                  </option>
-                </select>
+                <strong>{{ selectedAreaName }}</strong>
                 <em>{{ selectedAreaTargetLabel }}</em>
               </span>
               <ChevronDown
                 :size="18"
                 class="crud-area-select__chevron"
               />
+              <select
+                :key="localSelectedAreaId"
+                v-model="localSelectedAreaId"
+                class="crud-area-select__native"
+                aria-label="Pilih area input harian"
+                autocomplete="off"
+                @change="handleAreaChange"
+              >
+                <option v-for="area in areaOptions" :key="area.id" :value="area.id">
+                  {{ area.name }}
+                </option>
+              </select>
             </div>
           </div>
         </div>
@@ -380,6 +381,7 @@ const handleAreaChange = (event) => {
 }
 
 .crud-area-select__trigger {
+  position: relative;
   display: grid;
   width: 100%;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -476,17 +478,15 @@ const handleAreaChange = (event) => {
 }
 
 .crud-area-select__native {
-  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   width: 100%;
-  min-width: 0;
-  margin-top: 0.18rem;
+  height: 100%;
   border: 0;
   background: transparent;
-  color: #eef6ff;
   cursor: pointer;
-  font-size: 1.02rem;
-  font-weight: 900;
-  line-height: 1.15;
+  opacity: 0;
   outline: none;
   padding: 0;
   appearance: none;
