@@ -43,7 +43,6 @@ const getInitialState = (date = today, areaId = props.selectedAreaId) => ({
 const formData = ref(getInitialState())
 const isEditMode = ref(false)
 const localSelectedAreaId = ref(props.selectedAreaId)
-const isAreaMenuOpen = ref(false)
 
 const selectedArea = computed(() =>
   props.areaOptions.find((area) => area.id === localSelectedAreaId.value) || props.areaOptions[0] || null
@@ -89,13 +88,8 @@ const handleSubmit = () => {
   })
 }
 
-const toggleAreaMenu = () => {
-  isAreaMenuOpen.value = !isAreaMenuOpen.value
-}
-
 const selectArea = (areaId) => {
   localSelectedAreaId.value = areaId
-  isAreaMenuOpen.value = false
   emit('update:selectedAreaId', areaId)
 }
 </script>
@@ -134,13 +128,8 @@ const selectArea = (areaId) => {
         <div class="crud-date-wrap">
           <label class="crud-label">Area</label>
           <div class="crud-area-select">
-            <button
-              type="button"
+            <div
               class="crud-area-select__trigger"
-              :class="{ 'crud-area-select__trigger--open': isAreaMenuOpen }"
-              aria-haspopup="listbox"
-              :aria-expanded="isAreaMenuOpen"
-              @click="toggleAreaMenu"
             >
               <span class="crud-area-select__icon">
                 <MapPinned :size="18" />
@@ -153,22 +142,24 @@ const selectArea = (areaId) => {
               <ChevronDown
                 :size="18"
                 class="crud-area-select__chevron"
-                :class="{ 'crud-area-select__chevron--open': isAreaMenuOpen }"
               />
-            </button>
+            </div>
 
-            <div v-if="isAreaMenuOpen" class="crud-area-select__panel" role="listbox">
-              <button
+            <div class="crud-area-select__choices" role="radiogroup" aria-label="Pilih area input harian">
+              <label
                 v-for="area in areaOptions"
                 :key="area.id"
-                type="button"
                 class="crud-area-select__option"
                 :class="{ 'crud-area-select__option--active': area.id === localSelectedAreaId }"
-                role="option"
-                :aria-selected="area.id === localSelectedAreaId"
-                @pointerdown.prevent.stop="selectArea(area.id)"
-                @click.stop="selectArea(area.id)"
               >
+                <input
+                  v-model="localSelectedAreaId"
+                  type="radio"
+                  name="daily-area-id"
+                  :value="area.id"
+                  class="crud-area-select__radio"
+                  @change="selectArea(area.id)"
+                >
                 <span class="crud-area-select__option-icon">
                   <MapPinned :size="15" />
                 </span>
@@ -176,7 +167,7 @@ const selectArea = (areaId) => {
                   <strong>{{ area.name }}</strong>
                   <small>{{ area.splitTargetLabel }}</small>
                 </span>
-              </button>
+              </label>
             </div>
           </div>
         </div>
@@ -400,7 +391,6 @@ const selectArea = (areaId) => {
 
 .crud-area-select {
   position: relative;
-  z-index: 20;
   max-width: 28rem;
 }
 
@@ -498,30 +488,16 @@ const selectArea = (areaId) => {
 .crud-area-select__chevron {
   color: rgba(223, 239, 255, 0.92);
   pointer-events: none;
-  transition: transform 0.18s ease;
 }
 
-.crud-area-select__chevron--open {
-  transform: rotate(180deg);
-}
-
-.crud-area-select__panel {
-  position: absolute;
-  z-index: 10;
-  top: calc(100% + 0.5rem);
-  left: 0;
-  width: 100%;
-  overflow: hidden;
-  border-radius: 1rem;
-  border: 1px solid rgba(82, 137, 225, 0.42);
-  background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
-    linear-gradient(180deg, rgba(7, 28, 67, 0.98), rgba(4, 17, 43, 0.98));
-  padding: 0.4rem;
-  box-shadow: 0 24px 46px -26px rgba(2, 6, 23, 0.92);
+.crud-area-select__choices {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
 }
 
 .crud-area-select__option {
+  position: relative;
   display: grid;
   width: 100%;
   grid-template-columns: auto minmax(0, 1fr);
@@ -534,13 +510,21 @@ const selectArea = (areaId) => {
   cursor: pointer;
   padding: 0.7rem 0.75rem;
   text-align: left;
-  transition: background 0.16s ease, transform 0.16s ease;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
 .crud-area-select__option:hover,
 .crud-area-select__option--active {
   background: linear-gradient(135deg, rgba(29, 78, 216, 0.9), rgba(8, 145, 178, 0.86));
+  border-color: rgba(125, 211, 252, 0.46);
   transform: translateY(-1px);
+}
+
+.crud-area-select__radio {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  opacity: 0;
 }
 
 .crud-area-select__option-icon {
