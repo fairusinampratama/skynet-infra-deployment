@@ -127,6 +127,14 @@ const handleSubmit = () => {
               </span>
               <span class="crud-area-select__copy">
                 <small>Area Input</small>
+                <strong>{{ selectedAreaName }}</strong>
+                <em>{{ selectedAreaTargetLabel }}</em>
+              </span>
+              <ChevronDown
+                :size="18"
+                class="crud-area-select__chevron"
+              />
+              <span class="crud-area-select__hitbox">
                 <select
                   v-model="selectedAreaModel"
                   class="crud-area-select__native"
@@ -136,12 +144,7 @@ const handleSubmit = () => {
                     {{ area.name }}
                   </option>
                 </select>
-                <em>{{ selectedAreaTargetLabel }}</em>
               </span>
-              <ChevronDown
-                :size="18"
-                class="crud-area-select__chevron"
-              />
             </div>
           </div>
         </div>
@@ -369,6 +372,7 @@ const handleSubmit = () => {
 }
 
 .crud-area-select__trigger {
+  position: relative;
   display: grid;
   width: 100%;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -457,26 +461,32 @@ const handleSubmit = () => {
 }
 
 .crud-area-select__chevron {
+  position: relative;
+  z-index: 1;
   color: rgba(223, 239, 255, 0.92);
   pointer-events: none;
+}
+
+.crud-area-select__hitbox {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  cursor: pointer;
 }
 
 .crud-area-select__native {
   display: block;
   width: 100%;
+  height: 100%;
   border: 0;
   background: transparent;
-  color: #eef6ff;
+  color: transparent;
   cursor: pointer;
-  font-size: 1.02rem;
-  font-weight: 900;
-  line-height: 1.15;
-  margin-top: 0.18rem;
-  min-width: 0;
+  opacity: 0;
   outline: none;
   padding: 0;
-  text-overflow: ellipsis;
-  appearance: auto;
+  appearance: none;
 }
 
 .crud-area-select__native option {
