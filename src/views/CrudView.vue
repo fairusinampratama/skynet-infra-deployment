@@ -20,30 +20,34 @@ const router = useRouter()
 const isPinVerified = ref(false)
 const showPinModal = ref(false)
 const verifiedAt = ref(null)
-const validAreaIds = computed(() => areaOptions.value.map((area) => area.id))
+const crudAreaIds = ['randuagung', 'pasar-gadang', 'mangliawan']
+const routeAreaId = computed(() => {
+  const areaId = typeof route.params.areaId === 'string' ? route.params.areaId : 'randuagung'
+
+  return crudAreaIds.includes(areaId) ? areaId : 'randuagung'
+})
 
 const selectedCrudAreaId = computed({
-  get: () => selectedAreaId.value,
+  get: () => routeAreaId.value,
   set: (areaId) => {
-    selectedAreaId.value = areaId
+    const nextAreaId = crudAreaIds.includes(areaId) ? areaId : 'randuagung'
+    selectedAreaId.value = nextAreaId
 
-    if (route.params.areaId !== areaId) {
-      router.replace(`/crud/${areaId}`)
+    if (route.params.areaId !== nextAreaId) {
+      router.replace(`/crud/${nextAreaId}`)
     }
   }
 })
 
 watch(
-  () => route.params.areaId,
+  routeAreaId,
   (areaId) => {
-    const nextAreaId = typeof areaId === 'string' ? areaId : 'randuagung'
-
-    if (!validAreaIds.value.includes(nextAreaId)) {
+    if (route.params.areaId !== areaId) {
       router.replace('/crud/randuagung')
       return
     }
 
-    selectedAreaId.value = nextAreaId
+    selectedAreaId.value = areaId
   },
   { immediate: true }
 )
@@ -126,6 +130,7 @@ const formatVerifiedTime = (timeStr) => {
     <template v-if="isVerified">
       <section>
         <DailyInputForm
+          :key="selectedCrudAreaId"
           :logs="augmentedLogs"
           :area-options="areaOptions"
           v-model:selected-area-id="selectedCrudAreaId"
