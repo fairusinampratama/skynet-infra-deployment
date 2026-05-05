@@ -42,26 +42,22 @@ const getInitialState = (date = today, areaId = props.selectedAreaId) => ({
 
 const formData = ref(getInitialState())
 const isEditMode = ref(false)
-const localSelectedAreaId = ref(props.selectedAreaId)
+
+const selectedAreaModel = computed({
+  get: () => props.selectedAreaId,
+  set: (areaId) => {
+    emit('update:selectedAreaId', areaId)
+  }
+})
 
 const selectedArea = computed(() =>
-  props.areaOptions.find((area) => area.id === localSelectedAreaId.value) || props.areaOptions[0] || null
+  props.areaOptions.find((area) => area.id === selectedAreaModel.value) || props.areaOptions[0] || null
 )
 const selectedAreaName = computed(() => selectedArea.value?.name || 'Area')
 const selectedAreaTargetLabel = computed(() => selectedArea.value?.targetLabel || 'Target belum diisi')
 const selectedAreaSplitLabel = computed(() => selectedArea.value?.splitTargetLabel || 'ODP, ODC & HP menyusul')
 
-watch(() => props.selectedAreaId, (areaId) => {
-  localSelectedAreaId.value = areaId
-}, { immediate: true })
-
-watch(localSelectedAreaId, (areaId) => {
-  if (areaId !== props.selectedAreaId) {
-    emit('update:selectedAreaId', areaId)
-  }
-})
-
-watch(() => [formData.value.date, localSelectedAreaId.value], ([newDate, areaId]) => {
+watch(() => [formData.value.date, props.selectedAreaId], ([newDate, areaId]) => {
   const existingLog = props.logs.find((l) => l.date === newDate && (l.areaId || 'randuagung') === areaId)
   if (existingLog) {
     formData.value = {
@@ -84,13 +80,8 @@ const dailyTotals = computed(() => teamCards.reduce((acc, team) => {
 const handleSubmit = () => {
   emit('submit', {
     ...JSON.parse(JSON.stringify(formData.value)),
-    areaId: localSelectedAreaId.value
+    areaId: selectedAreaModel.value
   })
-}
-
-const selectArea = (areaId) => {
-  localSelectedAreaId.value = areaId
-  emit('update:selectedAreaId', areaId)
 }
 </script>
 
@@ -136,38 +127,21 @@ const selectArea = (areaId) => {
               </span>
               <span class="crud-area-select__copy">
                 <small>Area Input</small>
-                <strong>{{ selectedAreaName }}</strong>
+                <select
+                  v-model="selectedAreaModel"
+                  class="crud-area-select__native"
+                  aria-label="Pilih area input harian"
+                >
+                  <option v-for="area in areaOptions" :key="area.id" :value="area.id">
+                    {{ area.name }}
+                  </option>
+                </select>
                 <em>{{ selectedAreaTargetLabel }}</em>
               </span>
               <ChevronDown
                 :size="18"
                 class="crud-area-select__chevron"
               />
-            </div>
-
-            <div class="crud-area-select__choices" role="radiogroup" aria-label="Pilih area input harian">
-              <label
-                v-for="area in areaOptions"
-                :key="area.id"
-                class="crud-area-select__option"
-                :class="{ 'crud-area-select__option--active': area.id === localSelectedAreaId }"
-              >
-                <input
-                  v-model="localSelectedAreaId"
-                  type="radio"
-                  name="daily-area-id"
-                  :value="area.id"
-                  class="crud-area-select__radio"
-                  @change="selectArea(area.id)"
-                >
-                <span class="crud-area-select__option-icon">
-                  <MapPinned :size="15" />
-                </span>
-                <span class="crud-area-select__option-copy">
-                  <strong>{{ area.name }}</strong>
-                  <small>{{ area.splitTargetLabel }}</small>
-                </span>
-              </label>
             </div>
           </div>
         </div>
@@ -425,8 +399,7 @@ const selectArea = (areaId) => {
   transform: translateY(-1px);
 }
 
-.crud-area-select__icon,
-.crud-area-select__option-icon {
+.crud-area-select__icon {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -442,14 +415,12 @@ const selectArea = (areaId) => {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
-.crud-area-select__copy,
-.crud-area-select__option-copy {
+.crud-area-select__copy {
   display: grid;
   min-width: 0;
 }
 
-.crud-area-select__copy small,
-.crud-area-select__option-copy small {
+.crud-area-select__copy small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -490,65 +461,27 @@ const selectArea = (areaId) => {
   pointer-events: none;
 }
 
-.crud-area-select__choices {
-  display: grid;
-  gap: 0.45rem;
-  margin-top: 0.55rem;
-}
-
-.crud-area-select__option {
-  position: relative;
-  display: grid;
-  width: 100%;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.7rem;
-  border: 0;
-  border-radius: 0.78rem;
-  background: transparent;
-  color: #dcecff;
-  cursor: pointer;
-  padding: 0.7rem 0.75rem;
-  text-align: left;
-  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
-}
-
-.crud-area-select__option:hover,
-.crud-area-select__option--active {
-  background: linear-gradient(135deg, rgba(29, 78, 216, 0.9), rgba(8, 145, 178, 0.86));
-  border-color: rgba(125, 211, 252, 0.46);
-  transform: translateY(-1px);
-}
-
-.crud-area-select__radio {
-  position: absolute;
-  inset: 0;
-  cursor: pointer;
-  opacity: 0;
-}
-
-.crud-area-select__option-icon {
-  width: 2rem;
-  height: 2rem;
-  background: rgba(14, 165, 233, 0.14);
-  color: #bde7ff;
-}
-
-.crud-area-select__option-copy strong {
+.crud-area-select__native {
   display: block;
-  overflow: hidden;
-  color: #ffffff;
-  font-size: 0.9rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #eef6ff;
+  cursor: pointer;
+  font-size: 1.02rem;
   font-weight: 900;
+  line-height: 1.15;
+  margin-top: 0.18rem;
+  min-width: 0;
+  outline: none;
+  padding: 0;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  appearance: auto;
 }
 
-.crud-area-select__option-copy small {
-  margin-top: 0.16rem;
-  color: rgba(213, 230, 255, 0.72);
-  font-size: 0.72rem;
-  font-weight: 800;
+.crud-area-select__native option {
+  background: #071b3e;
+  color: #eef6ff;
 }
 
 .crud-area-note {
