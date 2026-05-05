@@ -55,6 +55,12 @@ watch(() => props.selectedAreaId, (areaId) => {
   localSelectedAreaId.value = areaId
 }, { immediate: true })
 
+watch(localSelectedAreaId, (areaId) => {
+  if (areaId !== props.selectedAreaId) {
+    emit('update:selectedAreaId', areaId)
+  }
+})
+
 watch(() => [formData.value.date, localSelectedAreaId.value], ([newDate, areaId]) => {
   const existingLog = props.logs.find((l) => l.date === newDate && (l.areaId || 'randuagung') === areaId)
   if (existingLog) {
@@ -80,11 +86,6 @@ const handleSubmit = () => {
     ...JSON.parse(JSON.stringify(formData.value)),
     areaId: localSelectedAreaId.value
   })
-}
-
-const selectArea = (areaId) => {
-  localSelectedAreaId.value = areaId
-  emit('update:selectedAreaId', areaId)
 }
 </script>
 
@@ -129,10 +130,9 @@ const selectArea = (areaId) => {
               <span class="crud-area-select__copy">
                 <small>Area Input</small>
                 <select
-                  :value="localSelectedAreaId"
+                  v-model="localSelectedAreaId"
                   class="crud-area-select__native"
                   aria-label="Pilih area input harian"
-                  @change="selectArea($event.target.value)"
                 >
                   <option v-for="area in areaOptions" :key="area.id" :value="area.id">
                     {{ area.name }}
