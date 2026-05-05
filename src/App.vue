@@ -8,21 +8,29 @@ const route = useRoute()
 const router = useRouter()
 
 const areaRoutes = [
-  { id: 'randuagung', name: 'Randuagung', path: '/randuagung' },
-  { id: 'pasar-gadang', name: 'Pasar Gadang', path: '/gadang' },
-  { id: 'mangliawan', name: 'Mangliawan', path: '/mangliawan' }
+  { id: 'randuagung', name: 'Randuagung', path: '/randuagung', crudPath: '/crud/randuagung' },
+  { id: 'pasar-gadang', name: 'Pasar Gadang', path: '/gadang', crudPath: '/crud/pasar-gadang' },
+  { id: 'mangliawan', name: 'Mangliawan', path: '/mangliawan', crudPath: '/crud/mangliawan' }
 ]
 
 const isDashboardRoute = computed(() => route.name?.toString().startsWith('dashboard'))
-const isCrudRoute = computed(() => route.path === '/crud')
-const activeAreaId = computed(() => route.meta.areaId ?? 'randuagung')
+const isCrudRoute = computed(() => route.path.startsWith('/crud'))
+const activeAreaId = computed(() => {
+  if (isCrudRoute.value) {
+    return route.params.areaId ?? 'randuagung'
+  }
+
+  return route.meta.areaId ?? 'randuagung'
+})
 const activeArea = computed(() =>
   areaRoutes.find((area) => area.id === activeAreaId.value) ?? areaRoutes[0]
 )
 const activeAreaPath = computed(() => {
-  if (!isDashboardRoute.value) return ''
   return areaRoutes.find((area) => area.id === activeAreaId.value)?.path ?? '/randuagung'
 })
+const activeCrudPath = computed(() =>
+  areaRoutes.find((area) => area.id === activeAreaId.value)?.crudPath ?? '/crud/randuagung'
+)
 const isAreaMenuOpen = ref(false)
 const areaMenuRef = ref(null)
 
@@ -30,10 +38,12 @@ const toggleAreaMenu = () => {
   isAreaMenuOpen.value = !isAreaMenuOpen.value
 }
 
-const selectArea = (path) => {
+const selectArea = (area) => {
   isAreaMenuOpen.value = false
-  router.push(path)
+  router.push(isCrudRoute.value ? area.crudPath : area.path)
 }
+
+const areaMenuPathLabel = (area) => isCrudRoute.value ? area.crudPath : area.path
 
 const closeAreaMenu = (event) => {
   if (!areaMenuRef.value?.contains(event.target)) {
@@ -156,14 +166,14 @@ onBeforeUnmount(() => {
                   class="area-nav-menu__item"
                   :class="{ 'area-nav-menu__item--active': activeAreaId === area.id }"
                   role="menuitem"
-                  @click="selectArea(area.path)"
+                  @click="selectArea(area)"
                 >
                   <span class="area-nav-menu__item-icon">
                     <MapPinned :size="15" />
                   </span>
                   <span class="area-nav-menu__item-copy">
                     <strong>{{ area.name }}</strong>
-                    <small>{{ area.path }}</small>
+                    <small>{{ areaMenuPathLabel(area) }}</small>
                   </span>
                   <Check v-if="activeAreaId === area.id" :size="16" class="area-nav-menu__check" />
                 </button>
@@ -171,11 +181,11 @@ onBeforeUnmount(() => {
             </div>
 
             <router-link
-              to="/crud"
+              :to="activeCrudPath"
               class="group inline-flex items-center rounded-full px-4 py-2.5 text-sm font-semibold transition-all"
               active-class="bg-[linear-gradient(135deg,_#1d4ed8,_#2563eb_45%,_#06b6d4)] text-white shadow-[0_18px_35px_-18px_rgba(37,99,235,0.7)]"
               :class="[
-                $route.path === '/crud'
+                isCrudRoute
                   ? ''
                   : isDashboardRoute
                     ? 'bg-white/6 text-slate-200 ring-1 ring-white/10 hover:-translate-y-0.5 hover:text-white hover:shadow-md'
