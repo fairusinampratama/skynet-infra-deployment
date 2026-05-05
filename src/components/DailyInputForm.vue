@@ -166,7 +166,8 @@ const selectArea = (areaId) => {
                 :class="{ 'crud-area-select__option--active': area.id === localSelectedAreaId }"
                 role="option"
                 :aria-selected="area.id === localSelectedAreaId"
-                @click="selectArea(area.id)"
+                @pointerdown.prevent.stop="selectArea(area.id)"
+                @click.stop="selectArea(area.id)"
               >
                 <span class="crud-area-select__option-icon">
                   <MapPinned :size="15" />
@@ -399,6 +400,7 @@ const selectArea = (areaId) => {
 
 .crud-area-select {
   position: relative;
+  z-index: 20;
   max-width: 28rem;
 }
 
