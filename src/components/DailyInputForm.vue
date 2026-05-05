@@ -87,6 +87,12 @@ const handleSubmit = () => {
     areaId: localSelectedAreaId.value
   })
 }
+
+const handleAreaChange = (event) => {
+  const areaId = event.target.value
+  localSelectedAreaId.value = areaId
+  emit('update:selectedAreaId', areaId)
+}
 </script>
 
 <template>
@@ -118,7 +124,7 @@ const handleSubmit = () => {
       <p>Data untuk tanggal ini sudah ada. Form sedang berada di mode edit dan akan menimpa data sebelumnya.</p>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="crud-form">
+    <form @submit.prevent="handleSubmit" class="crud-form" autocomplete="off">
       <div class="crud-control-grid">
         <div class="crud-date-wrap">
           <label class="crud-label">Area</label>
@@ -130,9 +136,12 @@ const handleSubmit = () => {
               <span class="crud-area-select__copy">
                 <small>Area Input</small>
                 <select
+                  :key="localSelectedAreaId"
                   v-model="localSelectedAreaId"
                   class="crud-area-select__native"
                   aria-label="Pilih area input harian"
+                  autocomplete="off"
+                  @change="handleAreaChange"
                 >
                   <option v-for="area in areaOptions" :key="area.id" :value="area.id">
                     {{ area.name }}
