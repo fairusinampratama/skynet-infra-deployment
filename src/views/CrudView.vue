@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useDashboard } from '../composables/useDashboard'
 import DailyInputForm from '../components/DailyInputForm.vue'
 import LogsTable from '../components/LogsTable.vue'
@@ -14,9 +15,39 @@ const {
   deleteLog
 } = useDashboard()
 
+const route = useRoute()
+const router = useRouter()
 const isPinVerified = ref(false)
 const showPinModal = ref(false)
 const verifiedAt = ref(null)
+const validAreaIds = computed(() => areaOptions.value.map((area) => area.id))
+
+const selectedCrudAreaId = computed({
+  get: () => selectedAreaId.value,
+  set: (areaId) => {
+    selectedAreaId.value = areaId
+
+    if (route.params.areaId !== areaId) {
+      router.replace(`/crud/${areaId}`)
+    }
+  }
+})
+
+watch(
+  () => route.params.areaId,
+  (areaId) => {
+    const nextAreaId = typeof areaId === 'string' ? areaId : 'randuagung'
+
+    if (!validAreaIds.value.includes(nextAreaId)) {
+      router.replace('/crud/randuagung')
+      return
+    }
+
+    selectedAreaId.value = nextAreaId
+  },
+  { immediate: true }
+)
+
 
 onMounted(() => {
   const verified = sessionStorage.getItem('pinVerified')
@@ -97,7 +128,7 @@ const formatVerifiedTime = (timeStr) => {
         <DailyInputForm
           :logs="augmentedLogs"
           :area-options="areaOptions"
-          v-model:selected-area-id="selectedAreaId"
+          v-model:selected-area-id="selectedCrudAreaId"
           @submit="addLog"
         />
       </section>

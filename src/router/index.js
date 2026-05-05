@@ -30,7 +30,11 @@ const router = createRouter({
     },
     {
       path: '/crud',
-      name: 'crud',
+      redirect: '/crud/randuagung'
+    },
+    {
+      path: '/crud/:areaId',
+      name: 'crud-area',
       component: CrudView
     }
   ]
