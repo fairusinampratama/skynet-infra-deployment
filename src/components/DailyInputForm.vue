@@ -21,7 +21,7 @@ const emit = defineEmits(['submit', 'update:selectedAreaId'])
 
 const today = new Date().toISOString().split('T')[0]
 
-const teamCards = [
+const defaultTeamCards = [
   { key: 'tim1', title: 'Tim 1', pic: 'Riduwan' },
   { key: 'tim2', title: 'Tim 2', pic: 'Daffa' },
   { key: 'tim3', title: 'Tim 3', pic: 'Mr. Sukun' },
@@ -53,6 +53,13 @@ const selectedAreaModel = computed({
 const selectedArea = computed(() =>
   props.areaOptions.find((area) => area.id === selectedAreaModel.value) || props.areaOptions[0] || null
 )
+const teamCards = computed(() =>
+  (selectedArea.value?.teams?.length ? selectedArea.value.teams : defaultTeamCards).map((team) => ({
+    key: team.key,
+    title: team.name || team.title,
+    pic: team.pic
+  }))
+)
 const selectedAreaName = computed(() => selectedArea.value?.name || 'Area')
 const selectedAreaTargetLabel = computed(() => selectedArea.value?.targetLabel || 'Target belum diisi')
 const selectedAreaSplitLabel = computed(() => selectedArea.value?.splitTargetLabel || 'ODP, ODC & HP menyusul')
@@ -71,7 +78,7 @@ watch(() => [formData.value.date, props.selectedAreaId], ([newDate, areaId]) => 
   }
 }, { immediate: true })
 
-const dailyTotals = computed(() => teamCards.reduce((acc, team) => {
+const dailyTotals = computed(() => teamCards.value.reduce((acc, team) => {
   acc.odp += Number(formData.value[team.key]?.odp) || 0
   acc.odc += Number(formData.value[team.key]?.odc) || 0
   return acc
