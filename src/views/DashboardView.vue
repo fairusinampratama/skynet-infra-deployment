@@ -37,7 +37,9 @@ const REWARD_TARGET = 411
 const latestLog = computed(() => activeAreaLogs.value[activeAreaLogs.value.length - 1] ?? null)
 const nonRankingTeams = computed(() => teamTotals.value.filter((team) => team.rankingEligible === false))
 const hasTeamProgress = computed(() => activeArea.value.usesTeamProgress)
+const hasTeamRanking = computed(() => activeArea.value.usesTeamRanking !== false)
 const hasReward = computed(() => activeArea.value.usesReward)
+const primaryTeam = computed(() => teamTotals.value[0] ?? null)
 const activeAreaTarget = computed(() => TARGET_ODP.value + TARGET_ODC.value)
 const activeAreaProgressWidth = computed(() => Math.min(Math.max(progressPercent.value, 0), 100))
 const activeAreaTargetLabel = computed(() =>
@@ -157,7 +159,7 @@ const latestTimeLabel = computed(() => {
 
         <div class="relative mt-3 md:mt-4">
           <TeamRankingBoard
-            v-if="hasTeamProgress"
+            v-if="hasTeamProgress && hasTeamRanking"
             :team-rankings="teamRankings"
             :non-ranking-teams="nonRankingTeams"
             :total-target="TOTAL_TARGET"
@@ -165,6 +167,28 @@ const latestTimeLabel = computed(() => {
             :total-reward="TOTAL_REWARD"
             :show-reward="hasReward"
           />
+          <div v-else-if="hasTeamProgress" class="area-single-team-state">
+            <div>
+              <span class="area-single-team-state__label">Tim Area</span>
+              <h3>{{ primaryTeam?.name || activeArea.name }}</h3>
+              <p>{{ activeArea.name }} memakai satu tim, tanpa ranking.</p>
+            </div>
+
+            <div class="area-single-team-state__stats">
+              <div>
+                <span>ODP</span>
+                <strong>{{ primaryTeam?.odp || 0 }}</strong>
+              </div>
+              <div>
+                <span>ODC</span>
+                <strong>{{ primaryTeam?.odc || 0 }}</strong>
+              </div>
+              <div>
+                <span>Total</span>
+                <strong>{{ primaryTeam?.totalInstalled || 0 }}</strong>
+              </div>
+            </div>
+          </div>
           <div v-else class="area-empty-state">
             <div class="area-empty-state__icon">
               <MapPinned :size="28" />
@@ -209,6 +233,7 @@ const latestTimeLabel = computed(() => {
           :team-totals="teamTotals"
           :target-odp="TARGET_ODP"
           :target-odc="TARGET_ODC"
+          :show-ranking="hasTeamRanking"
         />
       </div>
 
@@ -606,6 +631,66 @@ const latestTimeLabel = computed(() => {
   line-height: 1.5;
 }
 
+.area-single-team-state {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  min-height: 18rem;
+  align-items: center;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(83, 130, 214, 0.3);
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(5, 17, 43, 0.96), rgba(3, 12, 32, 0.96));
+  padding: 1.4rem;
+  color: #ffffff;
+}
+
+.area-single-team-state__label,
+.area-single-team-state__stats span {
+  color: rgba(211, 226, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.area-single-team-state h3 {
+  margin-top: 0.35rem;
+  font-size: 2.2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.area-single-team-state p {
+  margin-top: 0.55rem;
+  color: rgba(219, 231, 255, 0.78);
+  font-weight: 700;
+}
+
+.area-single-team-state__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(5.4rem, 1fr));
+  gap: 0.8rem;
+}
+
+.area-single-team-state__stats div {
+  border-radius: 1rem;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  background: rgba(6, 20, 50, 0.68);
+  padding: 0.82rem;
+  text-align: right;
+}
+
+.area-single-team-state__stats strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: #67e8f9;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
 @media (max-width: 1023px) {
   .showcase-frame {
     min-height: auto;
@@ -652,7 +737,8 @@ const latestTimeLabel = computed(() => {
   }
 
   .area-console__head,
-  .area-empty-state {
+  .area-empty-state,
+  .area-single-team-state {
     flex-direction: column;
   }
 
@@ -666,6 +752,18 @@ const latestTimeLabel = computed(() => {
   }
 
   .area-focus-card__side {
+    text-align: left;
+  }
+
+  .area-single-team-state {
+    grid-template-columns: 1fr;
+  }
+
+  .area-single-team-state__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .area-single-team-state__stats div {
     text-align: left;
   }
 }

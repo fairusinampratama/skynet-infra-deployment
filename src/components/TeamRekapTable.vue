@@ -5,7 +5,8 @@ import { BarChart3, RadioTower, ShieldEllipsis, Users } from 'lucide-vue-next'
 const props = defineProps({
   teamTotals: { type: Array, required: true },
   targetOdp: { type: Number, required: true },
-  targetOdc: { type: Number, required: true }
+  targetOdc: { type: Number, required: true },
+  showRanking: { type: Boolean, default: true }
 })
 
 const formatPercent = (value, target) => {
@@ -80,7 +81,7 @@ const enrichedTeams = computed(() =>
     <div class="team-list">
       <article v-for="team in enrichedTeams" :key="team.id" class="team-row">
         <div class="team-row__main">
-          <div class="team-badge">T{{ team.rank }}</div>
+          <div v-if="showRanking" class="team-badge">T{{ team.rank }}</div>
           <div>
             <div class="team-row__title-wrap">
               <h4 class="team-row__title">{{ team.name }}</h4>
