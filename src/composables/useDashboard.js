@@ -29,7 +29,8 @@ const AREA_CONFIG = [
     targetOdc: 57,
     targetHomepass: 3680,
     hasKnownTarget: true,
-    usesTeamProgress: true
+    usesTeamProgress: true,
+    usesReward: true
   },
   {
     id: 'pasar-gadang',
@@ -39,7 +40,8 @@ const AREA_CONFIG = [
     targetOdc: 47,
     targetHomepass: 3000,
     hasKnownTarget: true,
-    usesTeamProgress: true
+    usesTeamProgress: true,
+    usesReward: false
   },
   {
     id: 'mangliawan',
@@ -49,7 +51,8 @@ const AREA_CONFIG = [
     targetOdc: 3,
     targetHomepass: 192,
     hasKnownTarget: true,
-    usesTeamProgress: true
+    usesTeamProgress: true,
+    usesReward: false
   }
 ]
 

@@ -22,6 +22,10 @@ const props = defineProps({
   totalReward: {
     type: Number,
     default: 20000000
+  },
+  showReward: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -91,11 +95,11 @@ const rewardAmount = (team) => {
         <div class="podium-body">
           <p class="team-label">{{ secondPlace.name }}</p>
           <h3 class="team-name">{{ secondPlace.pic }}</h3>
-          <div class="reward-pill">
+          <div v-if="showReward" class="reward-pill">
             <Banknote :size="15" />
             <span>{{ rewardAmount(secondPlace) }}</span>
           </div>
-          <p class="penalty-note">{{ penaltyLabel }}</p>
+          <p v-if="showReward" class="penalty-note">{{ penaltyLabel }}</p>
 
           <div class="stat-layout">
             <div>
@@ -145,11 +149,11 @@ const rewardAmount = (team) => {
         <div class="podium-body">
           <p class="team-label">{{ firstPlace.name }}</p>
           <h3 class="team-name team-name--main">{{ firstPlace.pic }}</h3>
-          <div class="reward-pill reward-pill--main">
+          <div v-if="showReward" class="reward-pill reward-pill--main">
             <Banknote :size="16" />
             <span>{{ rewardAmount(firstPlace) }}</span>
           </div>
-          <p class="penalty-note penalty-note--main">{{ penaltyLabel }}</p>
+          <p v-if="showReward" class="penalty-note penalty-note--main">{{ penaltyLabel }}</p>
 
           <div class="stat-layout stat-layout--main">
             <div>
@@ -203,11 +207,11 @@ const rewardAmount = (team) => {
         <div class="podium-body">
           <p class="team-label">{{ thirdPlace.name }}</p>
           <h3 class="team-name">{{ thirdPlace.pic }}</h3>
-          <div class="reward-pill">
+          <div v-if="showReward" class="reward-pill">
             <Banknote :size="15" />
             <span>{{ rewardAmount(thirdPlace) }}</span>
           </div>
-          <p class="penalty-note">{{ penaltyLabel }}</p>
+          <p v-if="showReward" class="penalty-note">{{ penaltyLabel }}</p>
 
           <div class="stat-layout">
             <div>
@@ -244,11 +248,11 @@ const rewardAmount = (team) => {
           <div>
             <p class="team-label">{{ fourthPlace.name }}</p>
             <h3 class="team-name">{{ fourthPlace.pic }}</h3>
-            <div class="reward-pill reward-pill--mini">
+            <div v-if="showReward" class="reward-pill reward-pill--mini">
               <Banknote :size="14" />
               <span>{{ rewardAmount(fourthPlace) }}</span>
             </div>
-            <p class="penalty-note">{{ penaltyLabel }}</p>
+            <p v-if="showReward" class="penalty-note">{{ penaltyLabel }}</p>
           </div>
           <div class="rank-bubble rank-bubble--silver">#4</div>
         </div>

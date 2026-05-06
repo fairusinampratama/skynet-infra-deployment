@@ -37,6 +37,7 @@ const REWARD_TARGET = 411
 const latestLog = computed(() => activeAreaLogs.value[activeAreaLogs.value.length - 1] ?? null)
 const nonRankingTeams = computed(() => teamTotals.value.filter((team) => team.rankingEligible === false))
 const hasTeamProgress = computed(() => activeArea.value.usesTeamProgress)
+const hasReward = computed(() => activeArea.value.usesReward)
 const activeAreaTarget = computed(() => TARGET_ODP.value + TARGET_ODC.value)
 const activeAreaProgressWidth = computed(() => Math.min(Math.max(progressPercent.value, 0), 100))
 const activeAreaTargetLabel = computed(() =>
@@ -162,6 +163,7 @@ const latestTimeLabel = computed(() => {
             :total-target="TOTAL_TARGET"
             :reward-target="REWARD_TARGET"
             :total-reward="TOTAL_REWARD"
+            :show-reward="hasReward"
           />
           <div v-else class="area-empty-state">
             <div class="area-empty-state__icon">
