@@ -171,7 +171,6 @@ const latestTimeLabel = computed(() => {
             <div>
               <span class="area-single-team-state__label">Tim Area</span>
               <h3>{{ primaryTeam?.name || activeArea.name }}</h3>
-              <p>{{ activeArea.name }} memakai satu tim, tanpa ranking.</p>
             </div>
 
             <div class="area-single-team-state__stats">
