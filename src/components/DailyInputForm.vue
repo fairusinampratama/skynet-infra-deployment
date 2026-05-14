@@ -56,6 +56,7 @@ const selectedArea = computed(() =>
 const teamCards = computed(() =>
   (selectedArea.value?.teams?.length ? selectedArea.value.teams : defaultTeamCards).map((team) => ({
     key: team.key,
+    sourceKeys: team.sourceKeys || [team.key],
     title: team.name || team.title,
     pic: team.pic
   }))
@@ -71,6 +72,22 @@ watch(() => [formData.value.date, props.selectedAreaId], ([newDate, areaId]) => 
       ...getInitialState(newDate, areaId),
       ...JSON.parse(JSON.stringify(existingLog))
     }
+    teamCards.value.forEach((team) => {
+      if (team.sourceKeys.length <= 1) return
+
+      const mergedTeam = team.sourceKeys.reduce((acc, key) => {
+        acc.odp += Number(formData.value[key]?.odp) || 0
+        acc.odc += Number(formData.value[key]?.odc) || 0
+        return acc
+      }, { odp: 0, odc: 0 })
+
+      formData.value[team.key] = mergedTeam
+      team.sourceKeys
+        .filter((key) => key !== team.key)
+        .forEach((key) => {
+          formData.value[key] = { odp: 0, odc: 0 }
+        })
+    })
     isEditMode.value = true
   } else {
     formData.value = getInitialState(newDate, areaId)

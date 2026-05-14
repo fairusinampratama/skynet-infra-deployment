@@ -10,6 +10,7 @@ import { Lock, ShieldCheck, Sparkles } from 'lucide-vue-next'
 const {
   augmentedLogs,
   areaOptions,
+  activeArea,
   selectedAreaId,
   addLog,
   deleteLog
@@ -139,7 +140,7 @@ const formatVerifiedTime = (timeStr) => {
       </section>
 
       <section>
-        <LogsTable :logs="augmentedLogs" @delete="deleteLog" />
+        <LogsTable :logs="augmentedLogs" :teams="activeArea.teams" @delete="deleteLog" />
       </section>
     </template>
 

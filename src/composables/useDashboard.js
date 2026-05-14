@@ -16,6 +16,19 @@ const MANGLIAWAN_TEAM_CONFIG = [
   { id: 1, key: 'tim1', name: 'Unsur', pic: 'Mangliawan', baseOdp: 0, baseOdc: 0, rankingEligible: false }
 ]
 
+const PASAR_GADANG_TEAM_CONFIG = [
+  {
+    id: 1,
+    key: 'tim1',
+    sourceKeys: TEAM_CONFIG.map((team) => team.key),
+    name: 'Skynet',
+    pic: 'Pasar Gadang',
+    baseOdp: 0,
+    baseOdc: 0,
+    rankingEligible: false
+  }
+]
+
 const SHOWCASE_TEAMS = [
   { id: 1, name: 'Tim 1', pic: 'Riduwan', odp: 26, odc: 2, totalInstalled: 28 },
   { id: 3, name: 'Tim 3', pic: 'Mr. Sukun', odp: 24, odc: 3, totalInstalled: 27 },
@@ -42,14 +55,14 @@ const AREA_CONFIG = [
     id: 'pasar-gadang',
     name: 'Pasar Gadang',
     shortName: 'Pasar Gadang',
-    targetOdp: 375,
-    targetOdc: 47,
-    targetHomepass: 3000,
+    targetOdp: 750,
+    targetOdc: 94,
+    targetHomepass: 6000,
     hasKnownTarget: true,
     usesTeamProgress: true,
     usesReward: false,
-    usesTeamRanking: true,
-    teams: TEAM_CONFIG
+    usesTeamRanking: false,
+    teams: PASAR_GADANG_TEAM_CONFIG
   },
   {
     id: 'mangliawan',
@@ -168,6 +181,16 @@ export function useDashboard() {
   const getAreaTeamConfig = (areaId) =>
     (AREA_CONFIG.find((area) => area.id === areaId)?.teams ?? TEAM_CONFIG)
 
+  const getLogTeamTotals = (log, team) => {
+    const sourceKeys = team.sourceKeys?.length ? team.sourceKeys : [team.key]
+
+    return sourceKeys.reduce((acc, key) => {
+      acc.odp += Number(log[key]?.odp) || 0
+      acc.odc += Number(log[key]?.odc) || 0
+      return acc
+    }, { odp: 0, odc: 0 })
+  }
+
   const activeAreaLogs = computed(() =>
     logs.value.filter((log) => getLogAreaId(log) === activeArea.value.id)
   )
@@ -188,8 +211,10 @@ export function useDashboard() {
 
     areaLogs.forEach(log => {
       teamConfig.forEach((team, index) => {
-        totals[index].odp += Number(log[team.key]?.odp) || 0
-        totals[index].odc += Number(log[team.key]?.odc) || 0
+        const dailyTeamTotal = getLogTeamTotals(log, team)
+
+        totals[index].odp += dailyTeamTotal.odp
+        totals[index].odc += dailyTeamTotal.odc
       })
     })
 
@@ -467,8 +492,8 @@ export function useDashboard() {
     const activeTeamConfig = getAreaTeamConfig(activeArea.value.id)
 
     activeAreaLogs.value.forEach(log => {
-      const dailyOdp = activeTeamConfig.reduce((sum, team) => sum + (Number(log[team.key]?.odp) || 0), 0)
-      const dailyOdc = activeTeamConfig.reduce((sum, team) => sum + (Number(log[team.key]?.odc) || 0), 0)
+      const dailyOdp = activeTeamConfig.reduce((sum, team) => sum + getLogTeamTotals(log, team).odp, 0)
+      const dailyOdc = activeTeamConfig.reduce((sum, team) => sum + getLogTeamTotals(log, team).odc, 0)
 
       currentOdp += dailyOdp
       currentOdc += dailyOdc
@@ -489,8 +514,8 @@ export function useDashboard() {
     const activeTeamConfig = getAreaTeamConfig(activeArea.value.id)
 
     return activeAreaLogs.value.map((log, index) => {
-      const dailyOdp = activeTeamConfig.reduce((sum, team) => sum + (Number(log[team.key]?.odp) || 0), 0)
-      const dailyOdc = activeTeamConfig.reduce((sum, team) => sum + (Number(log[team.key]?.odc) || 0), 0)
+      const dailyOdp = activeTeamConfig.reduce((sum, team) => sum + getLogTeamTotals(log, team).odp, 0)
+      const dailyOdc = activeTeamConfig.reduce((sum, team) => sum + getLogTeamTotals(log, team).odc, 0)
 
       accOdp += dailyOdp
       accOdc += dailyOdc

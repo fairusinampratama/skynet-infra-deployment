@@ -1,14 +1,39 @@
 <script setup>
+import { computed } from 'vue'
 import { Trash2, Table2 } from 'lucide-vue-next'
 
-defineProps({
+const props = defineProps({
   logs: {
     type: Array,
     required: true
+  },
+  teams: {
+    type: Array,
+    default: () => []
   }
 })
 
 defineEmits(['delete'])
+
+const displayTeams = computed(() =>
+  (props.teams.length ? props.teams : [
+    { key: 'tim1', name: 'Tim 1' },
+    { key: 'tim2', name: 'Tim 2' },
+    { key: 'tim3', name: 'Tim 3' },
+    { key: 'tim4', name: 'Tim 4' },
+    { key: 'tim5', name: 'Tim 5' }
+  ]).map((team) => ({
+    key: team.key,
+    sourceKeys: team.sourceKeys || [team.key],
+    name: team.name || team.title || team.key
+  }))
+)
+
+const emptyColspan = computed(() => 10 + (displayTeams.value.length * 2))
+const tableMinWidth = computed(() => `${720 + (displayTeams.value.length * 150)}px`)
+
+const teamValue = (log, team, field) =>
+  team.sourceKeys.reduce((sum, key) => sum + (Number(log[key]?.[field]) || 0), 0)
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
@@ -37,16 +62,12 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
     </div>
 
     <div class="logs-table-wrap">
-      <table class="logs-table">
+      <table class="logs-table" :style="{ minWidth: tableMinWidth }">
         <thead>
           <tr>
             <th class="sticky-col sticky-col--day" rowspan="2">Hari</th>
             <th class="sticky-col sticky-col--date" rowspan="2">Tanggal</th>
-            <th class="head-group" colspan="2">Tim 1</th>
-            <th class="head-group" colspan="2">Tim 2</th>
-            <th class="head-group" colspan="2">Tim 3</th>
-            <th class="head-group" colspan="2">Tim 4</th>
-            <th class="head-group" colspan="2">Tim 5</th>
+            <th v-for="team in displayTeams" :key="team.key" class="head-group" colspan="2">{{ team.name }}</th>
             <th class="head-group head-group--blue" colspan="2">Total Harian</th>
             <th class="head-group head-group--deep" colspan="2">Akumulasi</th>
             <th class="head-group head-group--green" colspan="2">Progress</th>
@@ -54,16 +75,10 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
             <th rowspan="2">Aksi</th>
           </tr>
           <tr>
-            <th>ODP</th>
-            <th>ODC</th>
-            <th>ODP</th>
-            <th>ODC</th>
-            <th>ODP</th>
-            <th>ODC</th>
-            <th>ODP</th>
-            <th>ODC</th>
-            <th>ODP</th>
-            <th>ODC</th>
+            <template v-for="team in displayTeams" :key="`${team.key}-split`">
+              <th>ODP</th>
+              <th>ODC</th>
+            </template>
             <th class="head-group--blue-sub">ODP</th>
             <th class="head-group--blue-sub">ODC</th>
             <th class="head-group--deep-sub">ODP</th>
@@ -75,7 +90,7 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
 
         <tbody>
           <tr v-if="logs.length === 0">
-            <td colspan="20" class="logs-empty">
+            <td :colspan="emptyColspan" class="logs-empty">
               Belum ada data riwayat
             </td>
           </tr>
@@ -83,16 +98,10 @@ const formatPercent = (value) => `${(value * 100).toFixed(1)}%`
           <tr v-for="log in logs" v-else :key="log.id">
             <td class="sticky-col sticky-col--day body-sticky">{{ log.hariIndex }}</td>
             <td class="sticky-col sticky-col--date body-sticky">{{ formatDate(log.date) }}</td>
-            <td :class="(!log.tim1?.odp || log.tim1.odp === 0) ? 'muted' : 'blue'">{{ log.tim1?.odp || 0 }}</td>
-            <td :class="(!log.tim1?.odc || log.tim1.odc === 0) ? 'muted' : 'violet'">{{ log.tim1?.odc || 0 }}</td>
-            <td :class="(!log.tim2?.odp || log.tim2.odp === 0) ? 'muted' : 'blue'">{{ log.tim2?.odp || 0 }}</td>
-            <td :class="(!log.tim2?.odc || log.tim2.odc === 0) ? 'muted' : 'violet'">{{ log.tim2?.odc || 0 }}</td>
-            <td :class="(!log.tim3?.odp || log.tim3.odp === 0) ? 'muted' : 'blue'">{{ log.tim3?.odp || 0 }}</td>
-            <td :class="(!log.tim3?.odc || log.tim3.odc === 0) ? 'muted' : 'violet'">{{ log.tim3?.odc || 0 }}</td>
-            <td :class="(!log.tim4?.odp || log.tim4.odp === 0) ? 'muted' : 'blue'">{{ log.tim4?.odp || 0 }}</td>
-            <td :class="(!log.tim4?.odc || log.tim4.odc === 0) ? 'muted' : 'violet'">{{ log.tim4?.odc || 0 }}</td>
-            <td :class="(!log.tim5?.odp || log.tim5.odp === 0) ? 'muted' : 'blue'">{{ log.tim5?.odp || 0 }}</td>
-            <td :class="(!log.tim5?.odc || log.tim5.odc === 0) ? 'muted' : 'violet'">{{ log.tim5?.odc || 0 }}</td>
+            <template v-for="team in displayTeams" :key="`${log.id}-${team.key}`">
+              <td :class="teamValue(log, team, 'odp') === 0 ? 'muted' : 'blue'">{{ teamValue(log, team, 'odp') }}</td>
+              <td :class="teamValue(log, team, 'odc') === 0 ? 'muted' : 'violet'">{{ teamValue(log, team, 'odc') }}</td>
+            </template>
             <td class="metric-blue">{{ log.dailyOdp }}</td>
             <td class="metric-violet">{{ log.dailyOdc }}</td>
             <td class="metric-deep-blue">{{ log.accOdp }}</td>
