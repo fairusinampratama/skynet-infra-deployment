@@ -15,6 +15,8 @@ const areaRoutes = [
 
 const isDashboardRoute = computed(() => route.name?.toString().startsWith('dashboard'))
 const isCrudRoute = computed(() => route.path.startsWith('/crud'))
+const isAnalyzerRoute = computed(() => route.name === 'grafana')
+const isDarkRoute = computed(() => isDashboardRoute.value || isAnalyzerRoute.value)
 const activeAreaId = computed(() => {
   if (isCrudRoute.value) {
     return route.params.areaId ?? 'randuagung'
@@ -64,7 +66,7 @@ onBeforeUnmount(() => {
   <div
     class="app-shell min-h-screen pb-12 selection:bg-blue-300/30"
     :class="[
-      isDashboardRoute
+      isDarkRoute
         ? 'text-slate-100 selection:text-white'
         : 'text-slate-900 selection:text-slate-900',
       isCrudRoute
@@ -73,7 +75,7 @@ onBeforeUnmount(() => {
     ]"
   >
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <template v-if="isDashboardRoute">
+      <template v-if="isDarkRoute">
         <div class="absolute inset-0 bg-[linear-gradient(180deg,_#020712_0%,_#061225_38%,_#020712_100%)]" />
         <div class="absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.24),_transparent_56%)]" />
         <div class="absolute left-[-8rem] top-28 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -91,7 +93,7 @@ onBeforeUnmount(() => {
     <header
       class="sticky top-0 z-20 backdrop-blur-xl"
       :class="
-        isDashboardRoute
+        isDarkRoute
           ? 'border-b border-white/8 bg-[rgba(2,7,18,0.82)]'
           : 'border-b border-white/60 bg-white/72'
       "
@@ -105,13 +107,13 @@ onBeforeUnmount(() => {
             <div>
               <p
                 class="text-[11px] font-semibold uppercase tracking-[0.28em]"
-                :class="isDashboardRoute ? 'text-blue-200/80' : 'text-blue-700/80'"
+                :class="isDarkRoute ? 'text-blue-200/80' : 'text-blue-700/80'"
               >
                 Dashboard Proyek
               </p>
               <h1
                 class="text-lg font-black tracking-[0.02em] md:text-2xl"
-                :class="isDashboardRoute ? 'text-white' : 'text-slate-950'"
+                :class="isDarkRoute ? 'text-white' : 'text-slate-950'"
               >
                 Pembangunan ODP & ODC SkyNet
               </h1>
@@ -127,7 +129,7 @@ onBeforeUnmount(() => {
               :class="[
                 isDashboardRoute
                   ? ''
-                  : isDashboardRoute
+                  : isDarkRoute
                     ? 'bg-white/6 text-slate-200 ring-1 ring-white/10 hover:-translate-y-0.5 hover:text-white hover:shadow-md'
                     : 'bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md'
               ]"
@@ -141,7 +143,7 @@ onBeforeUnmount(() => {
                 type="button"
                 class="area-nav-menu__trigger"
                 :class="[
-                  isDashboardRoute ? 'area-nav-menu__trigger--dark' : 'area-nav-menu__trigger--light',
+                  isDarkRoute ? 'area-nav-menu__trigger--dark' : 'area-nav-menu__trigger--light',
                   { 'area-nav-menu__trigger--open': isAreaMenuOpen }
                 ]"
                 aria-haspopup="menu"
@@ -187,7 +189,7 @@ onBeforeUnmount(() => {
               :class="[
                 isCrudRoute
                   ? ''
-                  : isDashboardRoute
+                  : isDarkRoute
                     ? 'bg-white/6 text-slate-200 ring-1 ring-white/10 hover:-translate-y-0.5 hover:text-white hover:shadow-md'
                     : 'bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md'
               ]"
@@ -202,7 +204,7 @@ onBeforeUnmount(() => {
 
     <main
       :class="
-        isDashboardRoute
+        isDarkRoute
           ? 'mx-auto mt-5 max-w-[1480px] px-3 sm:px-4 lg:px-5'
           : 'mx-auto mt-8 max-w-7xl px-4 sm:px-6 lg:px-8'
       "

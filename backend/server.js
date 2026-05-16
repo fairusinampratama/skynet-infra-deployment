@@ -16,6 +16,7 @@ const DB_DRIVER = (process.env.DB_DRIVER || 'sqlite').toLowerCase()
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'database.sqlite')
 const ADMIN_PIN = process.env.ADMIN_PIN || '1234'
 const distPath = path.join(__dirname, '../dist')
+const GRAFANA_LINKS_PATH = process.env.GRAFANA_LINKS_PATH || path.join(__dirname, 'grafana-links.json')
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
 
@@ -72,6 +73,351 @@ app.use(express.json())
 
 const normalizeLogAreaId = (log) => log.areaId || 'randuagung'
 const parseLogData = (data) => (typeof data === 'string' ? JSON.parse(data) : data)
+const defaultGrafanaLinks = () =>
+  Array.from({ length: 4 }, (_, index) => ({
+    id: index + 1,
+    name: `Dashboard ${index + 1}`,
+    url: ''
+  }))
+
+const readGrafanaLinks = () => {
+  try {
+    if (!fs.existsSync(GRAFANA_LINKS_PATH)) return defaultGrafanaLinks()
+
+    const links = JSON.parse(fs.readFileSync(GRAFANA_LINKS_PATH, 'utf8'))
+    if (!Array.isArray(links)) return defaultGrafanaLinks()
+
+    return defaultGrafanaLinks().map((slot, index) => {
+      const stored = links[index] || {}
+      return {
+        id: slot.id,
+        name: String(stored.name || slot.name).slice(0, 80),
+        url: String(stored.url || '').trim()
+      }
+    })
+  } catch (err) {
+    console.error('Failed to read Grafana links', err.message)
+    return defaultGrafanaLinks()
+  }
+}
+
+const writeGrafanaLinks = (links) => {
+  const normalized = defaultGrafanaLinks().map((slot, index) => {
+    const source = links[index] || {}
+    return {
+      id: slot.id,
+      name: String(source.name || slot.name).slice(0, 80),
+      url: String(source.url || '').trim()
+    }
+  })
+
+  fs.writeFileSync(GRAFANA_LINKS_PATH, JSON.stringify(normalized, null, 2))
+  return normalized
+}
+
+const parseGrafanaUrl = (rawUrl) => {
+  const parsed = new URL(rawUrl)
+  const parts = parsed.pathname.split('/').filter(Boolean)
+  const publicIndex = parts.indexOf('public-dashboards')
+  const dashboardIndex = parts.indexOf('d')
+
+  return {
+    origin: parsed.origin,
+    href: parsed.href,
+    accessToken: publicIndex >= 0 ? parts[publicIndex + 1] : null,
+    dashboardUid: dashboardIndex >= 0 ? parts[dashboardIndex + 1] : null
+  }
+}
+
+const fetchJson = async (url, options = {}) => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      accept: 'application/json',
+      ...(options.body ? { 'content-type': 'application/json' } : {}),
+      ...(options.headers || {})
+    }
+  })
+  const text = await response.text()
+  let payload = null
+
+  try {
+    payload = text ? JSON.parse(text) : null
+  } catch {
+    payload = { raw: text.slice(0, 500) }
+  }
+
+  if (!response.ok) {
+    const message = payload?.message || payload?.error || response.statusText
+    throw new Error(`${response.status} ${message}`)
+  }
+
+  return payload
+}
+
+const normalizeDashboardPayload = (payload) => payload?.dashboard || payload?.spec || payload
+
+const getDashboardFromGrafanaLink = async (link) => {
+  const parsed = parseGrafanaUrl(link.url)
+
+  if (parsed.href.endsWith('.json')) {
+    return {
+      parsed,
+      dashboard: normalizeDashboardPayload(await fetchJson(parsed.href))
+    }
+  }
+
+  if (parsed.accessToken) {
+    const payload = await fetchJson(`${parsed.origin}/api/public/dashboards/${parsed.accessToken}`)
+    return {
+      parsed,
+      dashboard: normalizeDashboardPayload(payload)
+    }
+  }
+
+  if (parsed.dashboardUid) {
+    const payload = await fetchJson(`${parsed.origin}/api/dashboards/uid/${parsed.dashboardUid}`)
+    return {
+      parsed,
+      dashboard: normalizeDashboardPayload(payload)
+    }
+  }
+
+  throw new Error('URL bukan public dashboard Grafana atau dashboard JSON')
+}
+
+const relativeTimeToMs = (value, now = Date.now()) => {
+  if (!value || value === 'now') return now
+  if (typeof value === 'number') return value
+  if (/^\d+$/.test(value)) return Number(value)
+
+  const match = String(value).match(/^now-(\d+)([mhdw])$/)
+  if (!match) {
+    const parsed = Date.parse(value)
+    return Number.isNaN(parsed) ? now : parsed
+  }
+
+  const amount = Number(match[1])
+  const units = {
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+    w: 7 * 24 * 60 * 60 * 1000
+  }
+
+  return now - amount * units[match[2]]
+}
+
+const buildQueryPayload = (dashboard, panel, range) => {
+  const now = Date.now()
+  const fromMs = relativeTimeToMs(range?.from || dashboard?.time?.from || 'now-6h', now)
+  const toMs = relativeTimeToMs(range?.to || dashboard?.time?.to || 'now', now)
+  const intervalMs = Math.max(Math.round((toMs - fromMs) / 900), 1000)
+  const queries = (panel.targets || [])
+    .filter((target) => !target.hide && target.expr)
+    .map((target) => ({
+      ...target,
+      datasource: target.datasource || panel.datasource,
+      intervalMs,
+      maxDataPoints: 900
+    }))
+
+  return {
+    dashboardUID: dashboard.uid,
+    panelId: panel.id,
+    range: {
+      from: new Date(fromMs).toISOString(),
+      to: new Date(toMs).toISOString(),
+      raw: {
+        from: range?.from || dashboard?.time?.from || 'now-6h',
+        to: range?.to || dashboard?.time?.to || 'now'
+      }
+    },
+    from: String(fromMs),
+    to: String(toMs),
+    interval: `${Math.round(intervalMs / 1000)}s`,
+    intervalMs,
+    maxDataPoints: 900,
+    requestId: `panel-${panel.id}`,
+    timezone: dashboard.timezone || 'browser',
+    queries
+  }
+}
+
+const queryPanelData = async (parsed, dashboard, panel, range) => {
+  const payload = buildQueryPayload(dashboard, panel, range)
+
+  if (!payload.queries.length) {
+    return { payload: null, error: 'Panel tidak punya query aktif' }
+  }
+
+  const endpoints = parsed.accessToken
+    ? [
+        `${parsed.origin}/api/public/dashboards/${parsed.accessToken}/panels/${panel.id}/query`,
+        `${parsed.origin}/api/public/dashboards/${parsed.accessToken}/query`
+      ]
+    : [`${parsed.origin}/api/ds/query`]
+
+  let lastError
+  for (const endpoint of endpoints) {
+    try {
+      return {
+        payload: await fetchJson(endpoint, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        }),
+        error: null
+      }
+    } catch (err) {
+      lastError = err
+    }
+  }
+
+  return {
+    payload: null,
+    error: lastError?.message || 'Query panel gagal'
+  }
+}
+
+const normalizeTimestamp = (value) => {
+  if (value == null) return null
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+
+  if (value > 1e15) return Math.round(value / 1e6)
+  if (value > 1e12) return Math.round(value)
+  if (value > 1e9) return Math.round(value * 1000)
+  return null
+}
+
+const createSeriesStats = (name, points) => {
+  const validPoints = points
+    .map((point) => ({
+      time: normalizeTimestamp(point.time),
+      value: Number(point.value)
+    }))
+    .filter((point) => point.time && Number.isFinite(point.value))
+
+  if (!validPoints.length) return null
+
+  const peak = validPoints.reduce((best, point) => point.value > best.value ? point : best, validPoints[0])
+  const minimum = validPoints.reduce((best, point) => point.value < best.value ? point : best, validPoints[0])
+  const average = validPoints.reduce((sum, point) => sum + point.value, 0) / validPoints.length
+
+  return {
+    name,
+    points: validPoints.length,
+    peak,
+    minimum,
+    average,
+    unit: 'bps',
+    averageMbps: average / 1_000_000,
+    peakMbps: peak.value / 1_000_000,
+    minimumMbps: minimum.value / 1_000_000
+  }
+}
+
+const extractFrameStats = (responsePayload) => {
+  const stats = []
+  const results = responsePayload?.results || responsePayload?.data?.results || {}
+
+  for (const [refId, result] of Object.entries(results)) {
+    for (const frame of result.frames || []) {
+      const fields = frame.schema?.fields || []
+      const values = frame.data?.values || []
+      const timeIndex = fields.findIndex((field) => field.type === 'time' || /time/i.test(field.name || ''))
+      const valueIndexes = fields
+        .map((field, index) => ({ field, index }))
+        .filter(({ field, index }) => index !== timeIndex && (field.type === 'number' || values[index]?.some((value) => Number.isFinite(Number(value)))))
+
+      for (const { field, index } of valueIndexes) {
+        const points = (values[index] || []).map((value, pointIndex) => ({
+          time: values[timeIndex]?.[pointIndex],
+          value
+        }))
+        const stat = createSeriesStats(field.config?.displayNameFromDS || field.name || refId, points)
+        if (stat) stats.push(stat)
+      }
+    }
+
+    for (const series of result.series || []) {
+      const points = (series.datapoints || []).map(([value, time]) => ({ time, value }))
+      const stat = createSeriesStats(series.name || refId, points)
+      if (stat) stats.push(stat)
+    }
+  }
+
+  return stats
+}
+
+const createPanelSummary = (panel, series, queryError) => {
+  if (!series.length) {
+    return {
+      panelId: panel.id,
+      title: panel.title || `Panel ${panel.id}`,
+      queryError,
+      series: [],
+      status: queryError ? 'query_failed' : 'no_data',
+      note: queryError || 'Tidak ada data time-series yang bisa dihitung'
+    }
+  }
+
+  const topPeak = series.reduce((best, item) => item.peak.value > best.peak.value ? item : best, series[0])
+  const avgMbps = series.reduce((sum, item) => sum + item.averageMbps, 0) / series.length
+  const status = topPeak.peakMbps < 1 ? 'idle' : topPeak.minimumMbps <= 0.01 ? 'drop_seen' : 'normal'
+
+  return {
+    panelId: panel.id,
+    title: panel.title || `Panel ${panel.id}`,
+    queryError: null,
+    series,
+    status,
+    note: status === 'drop_seen'
+      ? 'Ada titik minimum mendekati 0 Mbps, perlu cek kemungkinan drop atau idle.'
+      : status === 'idle'
+        ? 'Traffic rendah selama rentang waktu ini.'
+        : `Peak tertinggi ${topPeak.peakMbps.toFixed(2)} Mbps, rata-rata gabungan ${avgMbps.toFixed(2)} Mbps.`
+  }
+}
+
+const analyzeGrafanaLink = async (link, range) => {
+  if (!link.url) {
+    return { ...link, status: 'empty', panels: [], error: 'URL belum diisi' }
+  }
+
+  try {
+    const { parsed, dashboard } = await getDashboardFromGrafanaLink(link)
+    const panels = (dashboard.panels || [])
+      .filter((panel) => panel.type === 'timeseries' || panel.targets?.length)
+
+    const analyzedPanels = []
+    for (const panel of panels) {
+      const { payload, error } = await queryPanelData(parsed, dashboard, panel, range)
+      analyzedPanels.push(createPanelSummary(panel, payload ? extractFrameStats(payload) : [], error))
+    }
+
+    return {
+      ...link,
+      status: analyzedPanels.some((panel) => panel.series.length) ? 'ok' : 'metadata_only',
+      dashboardTitle: dashboard.title || link.name,
+      panelCount: panels.length,
+      panels: analyzedPanels,
+      warning: analyzedPanels.some((panel) => panel.series.length)
+        ? null
+        : 'Dashboard terbaca, tapi data panel tidak bisa di-query tanpa akses publik/API.'
+    }
+  } catch (err) {
+    return {
+      ...link,
+      status: 'failed',
+      panels: [],
+      error: err.message
+    }
+  }
+}
+
 let db
 let mariaDbPool
 let resolveDatabaseReady
@@ -338,6 +684,41 @@ app.post('/api/verify-pin', (req, res) => {
 
 // GET /api/logs - Fetch all logs
 app.get('/api/logs', waitForDatabase, fetchDailyLogs)
+
+// GET /api/grafana-links - Fetch saved public Grafana dashboard links
+app.get('/api/grafana-links', (req, res) => {
+  res.json(readGrafanaLinks())
+})
+
+// POST /api/grafana-links - Save up to 4 public Grafana dashboard links
+app.post('/api/grafana-links', (req, res) => {
+  try {
+    res.json(writeGrafanaLinks(req.body.links || []))
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/grafana-analyze - Analyze traffic stats from saved/public Grafana dashboards
+app.post('/api/grafana-analyze', async (req, res) => {
+  const links = Array.isArray(req.body.links) ? req.body.links : readGrafanaLinks()
+  const range = req.body.range || { from: 'now-6h', to: 'now' }
+
+  try {
+    const results = []
+    for (const link of writeGrafanaLinks(links)) {
+      results.push(await analyzeGrafanaLink(link, range))
+    }
+
+    res.json({
+      analyzedAt: new Date().toISOString(),
+      range,
+      results
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 // POST /api/logs - Add or update a log
 app.post('/api/logs', waitForDatabase, async (req, res) => {

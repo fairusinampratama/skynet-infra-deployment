@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DashboardView from '../views/DashboardView.vue'
 import CrudView from '../views/CrudView.vue'
+import GrafanaAnalyzerView from '../views/GrafanaAnalyzerView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,6 +37,15 @@ const router = createRouter({
       path: '/crud/:areaId',
       name: 'crud-area',
       component: CrudView
+    },
+    {
+      path: '/grafana',
+      name: 'grafana',
+      component: GrafanaAnalyzerView
+    },
+    {
+      path: '/grafana-analyzer',
+      redirect: '/grafana'
     }
   ]
 })
