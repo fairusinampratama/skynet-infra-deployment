@@ -171,7 +171,10 @@ const normalizeDashboardPayload = (payload) => payload?.dashboard || payload?.sp
 const getDashboardFromGrafanaLink = async (link) => {
   if (link.dashboardJson?.trim()) {
     return {
-      parsed: link.url ? parseGrafanaUrl(link.url) : { origin: '', href: '', accessToken: null, dashboardUid: null },
+      parsed: {
+        ...(link.url ? parseGrafanaUrl(link.url) : { origin: '', href: '', accessToken: null, dashboardUid: null }),
+        source: 'json'
+      },
       dashboard: normalizeDashboardPayload(JSON.parse(link.dashboardJson))
     }
   }
@@ -296,7 +299,13 @@ const queryPrometheusPanelData = async (payload) => {
     url.searchParams.set('end', String(end))
     url.searchParams.set('step', String(step))
 
-    const response = await fetchJson(url.href)
+    let response
+    try {
+      response = await fetchJson(url.href)
+    } catch (err) {
+      throw new Error(`Prometheus query gagal di ${PROMETHEUS_URL}/api/v1/query_range: ${err.message}`)
+    }
+
     const series = (response?.data?.result || []).map((item) => ({
       name: formatPrometheusLegend(query.legendFormat, item.metric),
       datapoints: (item.values || []).map(([time, value]) => [Number(value), Number(time) * 1000])
@@ -326,6 +335,13 @@ const queryPanelData = async (parsed, dashboard, panel, range) => {
         payload: null,
         error: err.message || 'Query Prometheus gagal'
       }
+    }
+  }
+
+  if (parsed.source === 'json') {
+    return {
+      payload: null,
+      error: 'JSON dashboard sudah terbaca, tapi PROMETHEUS_URL belum diset di environment backend'
     }
   }
 
