@@ -113,7 +113,9 @@ const saveLinks = async () => {
   }
 }
 
-const analyzeLinks = async () => {
+const analyzeLinks = async ({ auto = false } = {}) => {
+  if (!filledLinks.value.length) return
+
   isLoading.value = true
   errorMessage.value = ''
   successMessage.value = ''
@@ -133,7 +135,7 @@ const analyzeLinks = async () => {
     if (!response.ok) throw new Error(payload.error || 'Analisa gagal')
 
     analysis.value = payload
-    successMessage.value = 'Analisa selesai.'
+    successMessage.value = auto ? 'Analisa otomatis selesai.' : 'Analisa selesai.'
   } catch (err) {
     errorMessage.value = err.message
   } finally {
@@ -197,7 +199,12 @@ const statusLabel = (status) => {
   return labels[status] || status
 }
 
-onMounted(loadLinks)
+onMounted(async () => {
+  await loadLinks()
+  if (filledLinks.value.length) {
+    await analyzeLinks({ auto: true })
+  }
+})
 </script>
 
 <template>
