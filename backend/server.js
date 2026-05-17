@@ -279,11 +279,26 @@ const formatPrometheusLegend = (legendFormat, metric = {}) => {
     : labels.join(', ') || 'Series'
 }
 
-const queryPrometheusPanelData = async (payload) => {
-  if (!PROMETHEUS_URL) {
+const resolvePrometheusUrl = (parsed) => {
+  if (PROMETHEUS_URL) return PROMETHEUS_URL
+  if (!parsed?.origin) return ''
+
+  try {
+    const url = new URL(parsed.origin)
+    if (url.port === '3000') url.port = '9090'
+    return url.href.replace(/\/+$/, '')
+  } catch {
+    return ''
+  }
+}
+
+const queryPrometheusPanelData = async (payload, parsed) => {
+  const prometheusUrl = resolvePrometheusUrl(parsed)
+
+  if (!prometheusUrl) {
     return {
       payload: null,
-      error: 'PROMETHEUS_URL belum diset di environment backend'
+      error: 'PROMETHEUS_URL belum diset dan URL Grafana tidak bisa dipakai untuk fallback Prometheus'
     }
   }
 
@@ -293,7 +308,7 @@ const queryPrometheusPanelData = async (payload) => {
   const step = Math.max(Math.round(payload.intervalMs / 1000), 1)
 
   for (const query of payload.queries) {
-    const url = new URL(`${PROMETHEUS_URL}/api/v1/query_range`)
+    const url = new URL(`${prometheusUrl}/api/v1/query_range`)
     url.searchParams.set('query', query.expr)
     url.searchParams.set('start', String(start))
     url.searchParams.set('end', String(end))
@@ -303,7 +318,7 @@ const queryPrometheusPanelData = async (payload) => {
     try {
       response = await fetchJson(url.href)
     } catch (err) {
-      throw new Error(`Prometheus query gagal di ${PROMETHEUS_URL}/api/v1/query_range: ${err.message}`)
+      throw new Error(`Prometheus query gagal di ${prometheusUrl}/api/v1/query_range: ${err.message}`)
     }
 
     const series = (response?.data?.result || []).map((item) => ({
@@ -327,21 +342,15 @@ const queryPanelData = async (parsed, dashboard, panel, range) => {
     return { payload: null, error: 'Panel tidak punya query aktif' }
   }
 
-  if (PROMETHEUS_URL) {
+  const shouldQueryPrometheus = Boolean(PROMETHEUS_URL || parsed.source === 'json')
+  if (shouldQueryPrometheus) {
     try {
-      return await queryPrometheusPanelData(payload)
+      return await queryPrometheusPanelData(payload, parsed)
     } catch (err) {
       return {
         payload: null,
         error: err.message || 'Query Prometheus gagal'
       }
-    }
-  }
-
-  if (parsed.source === 'json') {
-    return {
-      payload: null,
-      error: 'JSON dashboard sudah terbaca, tapi PROMETHEUS_URL belum diset di environment backend'
     }
   }
 
