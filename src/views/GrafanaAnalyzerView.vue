@@ -6,6 +6,7 @@ import {
   BarChart3,
   Clock3,
   ExternalLink,
+  FileText,
   Gauge,
   Link2,
   Loader2,
@@ -30,7 +31,7 @@ const rangeOptions = [
   { label: '7 Hari', value: 'now-7d' }
 ]
 
-const filledLinks = computed(() => links.value.filter((link) => link.url.trim()))
+const filledLinks = computed(() => links.value.filter((link) => link.url.trim() || link.dashboardJson?.trim()))
 const analyzedPanels = computed(() =>
   (analysis.value?.results || []).reduce((total, result) => total + (result.panels?.length || 0), 0)
 )
@@ -53,7 +54,8 @@ const loadLinks = async () => {
     links.value = Array.from({ length: 4 }, (_, index) => ({
       id: index + 1,
       name: `Dashboard ${index + 1}`,
-      url: ''
+      url: '',
+      dashboardJson: ''
     }))
   }
 }
@@ -72,7 +74,7 @@ const saveLinks = async () => {
     if (!response.ok) throw new Error('Gagal menyimpan link')
 
     links.value = await response.json()
-    successMessage.value = '4 slot link Grafana sudah disimpan.'
+    successMessage.value = '4 slot link/JSON Grafana sudah disimpan.'
   } catch (err) {
     errorMessage.value = err.message
   } finally {
@@ -99,12 +101,31 @@ const analyzeLinks = async () => {
     if (!response.ok) throw new Error(payload.error || 'Analisa gagal')
 
     analysis.value = payload
-    links.value = payload.results.map(({ id, name, url }) => ({ id, name, url }))
     successMessage.value = 'Analisa selesai.'
   } catch (err) {
     errorMessage.value = err.message
   } finally {
     isLoading.value = false
+  }
+}
+
+const loadDashboardJsonFile = async (event, link) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  try {
+    const text = await file.text()
+    const parsed = JSON.parse(text)
+    link.dashboardJson = text
+    if (!link.name || /^Dashboard \d+$/.test(link.name)) {
+      link.name = parsed.title || link.name
+    }
+    successMessage.value = `JSON ${file.name} dimuat ke Slot ${link.id}.`
+    errorMessage.value = ''
+  } catch (err) {
+    errorMessage.value = `JSON Slot ${link.id} tidak valid: ${err.message}`
+  } finally {
+    event.target.value = ''
   }
 }
 
@@ -155,7 +176,7 @@ onMounted(loadLinks)
           Grafana Traffic Analyzer
         </div>
         <h2>Analisa Peak, Minimum, dan Average Traffic</h2>
-        <p>Simpan 4 public dashboard Grafana, lalu hitung statistik traffic per panel dan series.</p>
+        <p>Simpan 4 public dashboard Grafana atau JSON export, lalu hitung statistik traffic per panel dan series.</p>
       </div>
 
       <div class="analyzer-actions">
@@ -196,6 +217,17 @@ onMounted(loadLinks)
         </div>
         <input v-model="link.name" class="link-input" type="text" placeholder="Nama dashboard" />
         <input v-model="link.url" class="link-input" type="url" placeholder="https://grafana.../public-dashboards/..." />
+        <label class="json-upload">
+          <FileText :size="16" />
+          Upload JSON export
+          <input type="file" accept="application/json,.json" @change="loadDashboardJsonFile($event, link)" />
+        </label>
+        <textarea
+          v-model="link.dashboardJson"
+          class="json-textarea"
+          rows="4"
+          placeholder="Atau paste export JSON dashboard Grafana di sini"
+        />
       </article>
     </section>
 
@@ -427,7 +459,7 @@ onMounted(loadLinks)
 
 .link-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
 }
 
@@ -459,6 +491,40 @@ onMounted(loadLinks)
 }
 
 .link-input::placeholder {
+  color: rgba(203, 213, 225, 0.46);
+}
+
+.json-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  border-radius: 0.8rem;
+  background: rgba(8, 35, 80, 0.86);
+  color: #dbeafe;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.json-upload input {
+  display: none;
+}
+
+.json-textarea {
+  min-height: 6.6rem;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgba(111, 151, 222, 0.3);
+  border-radius: 0.8rem;
+  background: rgba(6, 20, 50, 0.72);
+  color: #f8fbff;
+  outline: none;
+  padding: 0.75rem 0.82rem;
+  font: 700 0.82rem/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.json-textarea::placeholder {
   color: rgba(203, 213, 225, 0.46);
 }
 
@@ -627,7 +693,6 @@ onMounted(loadLinks)
     justify-content: flex-start;
   }
 
-  .link-grid,
   .summary-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

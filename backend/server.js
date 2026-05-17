@@ -17,6 +17,7 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'database.sqlite')
 const ADMIN_PIN = process.env.ADMIN_PIN || '1234'
 const distPath = path.join(__dirname, '../dist')
 const GRAFANA_LINKS_PATH = process.env.GRAFANA_LINKS_PATH || path.join(__dirname, 'grafana-links.json')
+const PROMETHEUS_URL = (process.env.PROMETHEUS_URL || '').replace(/\/+$/, '')
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
 fs.mkdirSync(path.dirname(GRAFANA_LINKS_PATH), { recursive: true })
@@ -70,7 +71,7 @@ const ensureFrontendBuild = () => {
 }
 
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
 
 const normalizeLogAreaId = (log) => log.areaId || 'randuagung'
 const parseLogData = (data) => (typeof data === 'string' ? JSON.parse(data) : data)
@@ -78,7 +79,8 @@ const defaultGrafanaLinks = () =>
   Array.from({ length: 4 }, (_, index) => ({
     id: index + 1,
     name: `Dashboard ${index + 1}`,
-    url: ''
+    url: '',
+    dashboardJson: ''
   }))
 
 const readGrafanaLinks = () => {
@@ -93,7 +95,8 @@ const readGrafanaLinks = () => {
       return {
         id: slot.id,
         name: String(stored.name || slot.name).slice(0, 80),
-        url: String(stored.url || '').trim()
+        url: String(stored.url || '').trim(),
+        dashboardJson: String(stored.dashboardJson || '').trim()
       }
     })
   } catch (err) {
@@ -108,13 +111,20 @@ const writeGrafanaLinks = (links) => {
     return {
       id: slot.id,
       name: String(source.name || slot.name).slice(0, 80),
-      url: String(source.url || '').trim()
+      url: String(source.url || '').trim(),
+      dashboardJson: String(source.dashboardJson || '').trim()
     }
   })
 
   fs.writeFileSync(GRAFANA_LINKS_PATH, JSON.stringify(normalized, null, 2))
   return normalized
 }
+
+const summarizeGrafanaLink = (link) => ({
+  id: link.id,
+  name: link.name,
+  url: link.url
+})
 
 const parseGrafanaUrl = (rawUrl) => {
   const parsed = new URL(rawUrl)
@@ -159,6 +169,13 @@ const fetchJson = async (url, options = {}) => {
 const normalizeDashboardPayload = (payload) => payload?.dashboard || payload?.spec || payload
 
 const getDashboardFromGrafanaLink = async (link) => {
+  if (link.dashboardJson?.trim()) {
+    return {
+      parsed: link.url ? parseGrafanaUrl(link.url) : { origin: '', href: '', accessToken: null, dashboardUid: null },
+      dashboard: normalizeDashboardPayload(JSON.parse(link.dashboardJson))
+    }
+  }
+
   const parsed = parseGrafanaUrl(link.url)
 
   if (parsed.href.endsWith('.json')) {
@@ -245,11 +262,78 @@ const buildQueryPayload = (dashboard, panel, range) => {
   }
 }
 
+const formatPrometheusLegend = (legendFormat, metric = {}) => {
+  if (legendFormat) {
+    return legendFormat.replace(/\{\{\s*([^}\s]+)\s*\}\}/g, (_, key) => metric[key] || '')
+  }
+
+  const labels = Object.entries(metric)
+    .filter(([key]) => key !== '__name__')
+    .map(([key, value]) => `${key}="${value}"`)
+
+  return metric.__name__
+    ? `${metric.__name__}${labels.length ? `{${labels.join(',')}}` : ''}`
+    : labels.join(', ') || 'Series'
+}
+
+const queryPrometheusPanelData = async (payload) => {
+  if (!PROMETHEUS_URL) {
+    return {
+      payload: null,
+      error: 'PROMETHEUS_URL belum diset di environment backend'
+    }
+  }
+
+  const results = {}
+  const start = Math.floor(new Date(payload.range.from).getTime() / 1000)
+  const end = Math.floor(new Date(payload.range.to).getTime() / 1000)
+  const step = Math.max(Math.round(payload.intervalMs / 1000), 1)
+
+  for (const query of payload.queries) {
+    const url = new URL(`${PROMETHEUS_URL}/api/v1/query_range`)
+    url.searchParams.set('query', query.expr)
+    url.searchParams.set('start', String(start))
+    url.searchParams.set('end', String(end))
+    url.searchParams.set('step', String(step))
+
+    const response = await fetchJson(url.href)
+    const series = (response?.data?.result || []).map((item) => ({
+      name: formatPrometheusLegend(query.legendFormat, item.metric),
+      datapoints: (item.values || []).map(([time, value]) => [Number(value), Number(time) * 1000])
+    }))
+
+    results[query.refId || `Q${Object.keys(results).length + 1}`] = { series }
+  }
+
+  return {
+    payload: { results },
+    error: null
+  }
+}
+
 const queryPanelData = async (parsed, dashboard, panel, range) => {
   const payload = buildQueryPayload(dashboard, panel, range)
 
   if (!payload.queries.length) {
     return { payload: null, error: 'Panel tidak punya query aktif' }
+  }
+
+  if (PROMETHEUS_URL) {
+    try {
+      return await queryPrometheusPanelData(payload)
+    } catch (err) {
+      return {
+        payload: null,
+        error: err.message || 'Query Prometheus gagal'
+      }
+    }
+  }
+
+  if (!parsed.origin) {
+    return {
+      payload: null,
+      error: 'PROMETHEUS_URL belum diset di environment backend'
+    }
   }
 
   const endpoints = parsed.accessToken
@@ -384,8 +468,10 @@ const createPanelSummary = (panel, series, queryError) => {
 }
 
 const analyzeGrafanaLink = async (link, range) => {
-  if (!link.url) {
-    return { ...link, status: 'empty', panels: [], error: 'URL belum diisi' }
+  const resultLink = summarizeGrafanaLink(link)
+
+  if (!link.url && !link.dashboardJson?.trim()) {
+    return { ...resultLink, status: 'empty', panels: [], error: 'URL/JSON belum diisi' }
   }
 
   try {
@@ -400,7 +486,7 @@ const analyzeGrafanaLink = async (link, range) => {
     }
 
     return {
-      ...link,
+      ...resultLink,
       status: analyzedPanels.some((panel) => panel.series.length) ? 'ok' : 'metadata_only',
       dashboardTitle: dashboard.title || link.name,
       panelCount: panels.length,
@@ -411,7 +497,7 @@ const analyzeGrafanaLink = async (link, range) => {
     }
   } catch (err) {
     return {
-      ...link,
+      ...resultLink,
       status: 'failed',
       panels: [],
       error: err.message
