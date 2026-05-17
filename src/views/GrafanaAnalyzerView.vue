@@ -23,6 +23,7 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const analysis = ref(null)
 const selectedRange = ref('now-6h')
+const grafanaLinksCacheKey = 'skynet:grafana-links:v1'
 
 const rangeOptions = [
   { label: '6 Jam', value: 'now-6h' },
@@ -42,21 +43,50 @@ const dataSeriesCount = computed(() =>
   )
 )
 
+const createDefaultLinks = () => Array.from({ length: 4 }, (_, index) => ({
+  id: index + 1,
+  name: `Dashboard ${index + 1}`,
+  url: '',
+  dashboardJson: ''
+}))
+
+const normalizeLinks = (sourceLinks = []) => createDefaultLinks().map((slot, index) => {
+  const source = sourceLinks[index] || {}
+  return {
+    id: slot.id,
+    name: source.name || slot.name,
+    url: source.url || '',
+    dashboardJson: source.dashboardJson || ''
+  }
+})
+
+const hasSavedLinkContent = (sourceLinks = []) =>
+  sourceLinks.some((link) => link.url?.trim() || link.dashboardJson?.trim())
+
+const readCachedLinks = () => {
+  try {
+    return normalizeLinks(JSON.parse(localStorage.getItem(grafanaLinksCacheKey) || '[]'))
+  } catch {
+    return createDefaultLinks()
+  }
+}
+
+const cacheLinks = (sourceLinks) => {
+  localStorage.setItem(grafanaLinksCacheKey, JSON.stringify(normalizeLinks(sourceLinks)))
+}
+
 const loadLinks = async () => {
   errorMessage.value = ''
 
   try {
     const response = await fetch('/api/grafana-links')
     if (!response.ok) throw new Error('Gagal membaca link Grafana')
-    links.value = await response.json()
+    const serverLinks = normalizeLinks(await response.json())
+    const cachedLinks = readCachedLinks()
+    links.value = hasSavedLinkContent(serverLinks) ? serverLinks : cachedLinks
   } catch (err) {
     errorMessage.value = err.message
-    links.value = Array.from({ length: 4 }, (_, index) => ({
-      id: index + 1,
-      name: `Dashboard ${index + 1}`,
-      url: '',
-      dashboardJson: ''
-    }))
+    links.value = readCachedLinks()
   }
 }
 
@@ -73,7 +103,8 @@ const saveLinks = async () => {
     })
     if (!response.ok) throw new Error('Gagal menyimpan link')
 
-    links.value = await response.json()
+    links.value = normalizeLinks(await response.json())
+    cacheLinks(links.value)
     successMessage.value = '4 slot link/JSON Grafana sudah disimpan.'
   } catch (err) {
     errorMessage.value = err.message
@@ -89,6 +120,7 @@ const analyzeLinks = async () => {
   analysis.value = null
 
   try {
+    cacheLinks(links.value)
     const response = await fetch('/api/grafana-analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -120,6 +152,7 @@ const loadDashboardJsonFile = async (event, link) => {
     if (!link.name || /^Dashboard \d+$/.test(link.name)) {
       link.name = parsed.title || link.name
     }
+    cacheLinks(links.value)
     successMessage.value = `JSON ${file.name} dimuat ke Slot ${link.id}.`
     errorMessage.value = ''
   } catch (err) {
