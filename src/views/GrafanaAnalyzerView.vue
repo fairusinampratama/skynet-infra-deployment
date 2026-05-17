@@ -1,6 +1,17 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import {
+  Chart as ChartJS,
+  CategoryScale,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip
+} from 'chart.js'
+import { Line } from 'vue-chartjs'
+import {
   Activity,
   AlertTriangle,
   BarChart3,
@@ -15,6 +26,8 @@ import {
   TrendingDown,
   TrendingUp
 } from 'lucide-vue-next'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler)
 
 const links = ref([])
 const isLoading = ref(false)
@@ -206,28 +219,77 @@ const chartSeries = (panel) => (panel.series || [])
   .filter((series) => series.graphPoints?.length)
   .slice(0, 5)
 
-const chartBounds = (panel) => {
-  const values = chartSeries(panel).flatMap((series) => series.graphPoints.map((point) => Number(point.valueMbps)))
-  if (!values.length) return { min: 0, max: 1 }
-
-  const max = Math.max(...values)
-  return { min: 0, max: max > 0 ? max : 1 }
+const chartLabels = (panel) => {
+  const firstSeries = chartSeries(panel)[0]
+  return (firstSeries?.graphPoints || []).map((point) => formatTime(point.time))
 }
 
-const chartPoint = (point, index, points, bounds) => {
-  const x = points.length <= 1 ? 0 : (index / (points.length - 1)) * 300
-  const ratio = (Number(point.valueMbps) - bounds.min) / (bounds.max - bounds.min || 1)
-  const y = 98 - Math.max(0, Math.min(1, ratio)) * 84
-  return `${x.toFixed(2)},${y.toFixed(2)}`
-}
+const chartData = (panel) => ({
+  labels: chartLabels(panel),
+  datasets: chartSeries(panel).map((series, index) => ({
+    label: series.name,
+    data: series.graphPoints.map((point) => Number(point.valueMbps) || 0),
+    borderColor: seriesColors[index % seriesColors.length],
+    backgroundColor: index === 0 ? 'rgba(56, 189, 248, 0.16)' : 'transparent',
+    borderWidth: 2,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    tension: 0.28,
+    fill: index === 0
+  }))
+})
 
-const chartPath = (points, bounds) =>
-  points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${chartPoint(point, index, points, bounds)}`).join(' ')
-
-const chartAreaPath = (points, bounds) => {
-  if (!points.length) return ''
-  const line = chartPath(points, bounds)
-  return `${line} L 300,104 L 0,104 Z`
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  animation: { duration: 500, easing: 'easeOutQuart' },
+  plugins: {
+    legend: {
+      display: true,
+      position: 'bottom',
+      labels: {
+        boxHeight: 8,
+        boxWidth: 18,
+        color: '#c8dcff',
+        font: { size: 11, weight: 700 },
+        padding: 14,
+        usePointStyle: true
+      }
+    },
+    tooltip: {
+      backgroundColor: 'rgba(3, 7, 18, 0.94)',
+      borderColor: 'rgba(148, 163, 184, 0.24)',
+      borderWidth: 1,
+      titleColor: '#ffffff',
+      bodyColor: '#dbeafe',
+      displayColors: true,
+      callbacks: {
+        label: (context) => `${context.dataset.label}: ${formatMbps(context.parsed.y)}`
+      }
+    }
+  },
+  scales: {
+    x: {
+      grid: { color: 'rgba(148, 163, 184, 0.08)' },
+      ticks: {
+        color: 'rgba(203, 213, 225, 0.66)',
+        font: { size: 10 },
+        maxRotation: 0,
+        autoSkip: true,
+        maxTicksLimit: 6
+      }
+    },
+    y: {
+      beginAtZero: true,
+      grid: { color: 'rgba(148, 163, 184, 0.14)' },
+      ticks: {
+        color: 'rgba(203, 213, 225, 0.72)',
+        font: { size: 10 },
+        callback: (value) => formatMbps(value)
+      }
+    }
+  }
 }
 
 const panelPeakMbps = (panel) =>
@@ -367,31 +429,8 @@ onMounted(async () => {
                 <span><TrendingUp :size="14" /> {{ formatMbps(panelPeakMbps(panel)) }}</span>
                 <span><BarChart3 :size="14" /> {{ formatMbps(panelAverageMbps(panel)) }}</span>
               </div>
-              <svg viewBox="0 0 300 112" preserveAspectRatio="none" aria-hidden="true">
-                <defs>
-                  <linearGradient :id="`area-${result.id}-${panel.panelId}`" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.28" />
-                    <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  v-if="chartSeries(panel)[0]"
-                  :d="chartAreaPath(chartSeries(panel)[0].graphPoints, chartBounds(panel))"
-                  :fill="`url(#area-${result.id}-${panel.panelId})`"
-                />
-                <path
-                  v-for="(series, index) in chartSeries(panel)"
-                  :key="series.name"
-                  :d="chartPath(series.graphPoints, chartBounds(panel))"
-                  :stroke="seriesColors[index % seriesColors.length]"
-                  fill="none"
-                />
-              </svg>
-              <div class="traffic-chart__legend">
-                <span v-for="(series, index) in chartSeries(panel)" :key="series.name">
-                  <i :style="{ background: seriesColors[index % seriesColors.length] }"></i>
-                  {{ series.name }}
-                </span>
+              <div class="traffic-chart__canvas">
+                <Line :data="chartData(panel)" :options="chartOptions" />
               </div>
             </div>
 
@@ -819,45 +858,9 @@ onMounted(async () => {
   font-weight: 900;
 }
 
-.traffic-chart svg {
-  display: block;
-  width: 100%;
-  height: 11rem;
-  margin-top: 0.2rem;
-}
-
-.traffic-chart svg path {
-  stroke-width: 2.4;
-  vector-effect: non-scaling-stroke;
-}
-
-.traffic-chart svg path:first-of-type {
-  stroke: none;
-}
-
-.traffic-chart__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem 0.7rem;
-  border-top: 1px solid rgba(96, 165, 250, 0.14);
-  padding: 0.6rem 0.72rem;
-}
-
-.traffic-chart__legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.34rem;
-  max-width: 100%;
-  color: rgba(226, 239, 255, 0.78);
-  font-size: 0.74rem;
-  font-weight: 900;
-}
-
-.traffic-chart__legend i {
-  width: 0.58rem;
-  height: 0.58rem;
-  flex: none;
-  border-radius: 999px;
+.traffic-chart__canvas {
+  height: 18rem;
+  padding: 0.75rem;
 }
 
 .series-stat-grid {
