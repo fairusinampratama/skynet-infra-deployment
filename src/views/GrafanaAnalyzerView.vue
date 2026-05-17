@@ -42,6 +42,7 @@ const dataSeriesCount = computed(() =>
     0
   )
 )
+const hasAnalysisResults = computed(() => Boolean(analysis.value?.results?.length))
 
 const createDefaultLinks = () => Array.from({ length: 4 }, (_, index) => ({
   id: index + 1,
@@ -199,6 +200,45 @@ const statusLabel = (status) => {
   return labels[status] || status
 }
 
+const seriesColors = ['#38bdf8', '#f97316', '#22c55e', '#e879f9', '#facc15']
+
+const chartSeries = (panel) => (panel.series || [])
+  .filter((series) => series.graphPoints?.length)
+  .slice(0, 5)
+
+const chartBounds = (panel) => {
+  const values = chartSeries(panel).flatMap((series) => series.graphPoints.map((point) => Number(point.valueMbps)))
+  if (!values.length) return { min: 0, max: 1 }
+
+  const max = Math.max(...values)
+  return { min: 0, max: max > 0 ? max : 1 }
+}
+
+const chartPoint = (point, index, points, bounds) => {
+  const x = points.length <= 1 ? 0 : (index / (points.length - 1)) * 300
+  const ratio = (Number(point.valueMbps) - bounds.min) / (bounds.max - bounds.min || 1)
+  const y = 98 - Math.max(0, Math.min(1, ratio)) * 84
+  return `${x.toFixed(2)},${y.toFixed(2)}`
+}
+
+const chartPath = (points, bounds) =>
+  points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${chartPoint(point, index, points, bounds)}`).join(' ')
+
+const chartAreaPath = (points, bounds) => {
+  if (!points.length) return ''
+  const line = chartPath(points, bounds)
+  return `${line} L 300,104 L 0,104 Z`
+}
+
+const panelPeakMbps = (panel) =>
+  Math.max(...(panel.series || []).map((series) => Number(series.peakMbps) || 0), 0)
+
+const panelAverageMbps = (panel) => {
+  const series = panel.series || []
+  if (!series.length) return 0
+  return series.reduce((sum, item) => sum + (Number(item.averageMbps) || 0), 0) / series.length
+}
+
 onMounted(async () => {
   await loadLinks()
   if (filledLinks.value.length) {
@@ -247,30 +287,6 @@ onMounted(async () => {
       {{ successMessage }}
     </div>
 
-    <section class="link-grid">
-      <article v-for="link in links" :key="link.id" class="link-card">
-        <div class="link-card__head">
-          <span><Link2 :size="16" /> Slot {{ link.id }}</span>
-          <a v-if="link.url" :href="link.url" target="_blank" rel="noreferrer" title="Buka dashboard">
-            <ExternalLink :size="16" />
-          </a>
-        </div>
-        <input v-model="link.name" class="link-input" type="text" placeholder="Nama dashboard" />
-        <input v-model="link.url" class="link-input" type="url" placeholder="https://grafana.../public-dashboards/..." />
-        <label class="json-upload">
-          <FileText :size="16" />
-          Upload JSON export
-          <input type="file" accept="application/json,.json" @change="loadDashboardJsonFile($event, link)" />
-        </label>
-        <textarea
-          v-model="link.dashboardJson"
-          class="json-textarea"
-          rows="4"
-          placeholder="Atau paste export JSON dashboard Grafana di sini"
-        />
-      </article>
-    </section>
-
     <section v-if="analysis" class="summary-strip">
       <div>
         <span>Dashboard Diisi</span>
@@ -290,6 +306,37 @@ onMounted(async () => {
       </div>
     </section>
 
+    <details class="settings-panel" :open="!filledLinks.length && !hasAnalysisResults">
+      <summary>
+        <span><FileText :size="16" /> Pengaturan dashboard</span>
+        <small>{{ filledLinks.length }}/4 slot tersimpan</small>
+      </summary>
+
+      <section class="link-grid">
+        <article v-for="link in links" :key="link.id" class="link-card">
+          <div class="link-card__head">
+            <span><Link2 :size="16" /> Slot {{ link.id }}</span>
+            <a v-if="link.url" :href="link.url" target="_blank" rel="noreferrer" title="Buka dashboard">
+              <ExternalLink :size="16" />
+            </a>
+          </div>
+          <input v-model="link.name" class="link-input" type="text" placeholder="Nama dashboard" />
+          <input v-model="link.url" class="link-input" type="url" placeholder="https://grafana.../public-dashboards/..." />
+          <label class="json-upload">
+            <FileText :size="16" />
+            Upload JSON export
+            <input type="file" accept="application/json,.json" @change="loadDashboardJsonFile($event, link)" />
+          </label>
+          <textarea
+            v-model="link.dashboardJson"
+            class="json-textarea"
+            rows="3"
+            placeholder="Atau paste export JSON dashboard Grafana di sini"
+          />
+        </article>
+      </section>
+    </details>
+
     <section v-if="analysis" class="result-stack">
       <article v-for="result in analysis.results" :key="result.id" class="dashboard-result">
         <div class="dashboard-result__head">
@@ -305,7 +352,7 @@ onMounted(async () => {
           </a>
         </div>
 
-        <div v-if="result.panels?.length" class="panel-list">
+        <div v-if="result.panels?.length" class="panel-grid">
           <article v-for="panel in result.panels" :key="panel.panelId" class="panel-result">
             <div class="panel-result__head">
               <div>
@@ -315,29 +362,46 @@ onMounted(async () => {
               <p>{{ panel.note }}</p>
             </div>
 
-            <div v-if="panel.series.length" class="series-table-wrap">
-              <table class="series-table">
-                <thead>
-                  <tr>
-                    <th>Series</th>
-                    <th><TrendingUp :size="14" /> Peak</th>
-                    <th><Clock3 :size="14" /> Jam Peak</th>
-                    <th><TrendingDown :size="14" /> Minimum</th>
-                    <th><Clock3 :size="14" /> Jam Min</th>
-                    <th><BarChart3 :size="14" /> Average</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="series in panel.series" :key="series.name">
-                    <td>{{ series.name }}</td>
-                    <td>{{ formatMbps(series.peakMbps) }}</td>
-                    <td>{{ formatTime(series.peak.time) }}</td>
-                    <td>{{ formatMbps(series.minimumMbps) }}</td>
-                    <td>{{ formatTime(series.minimum.time) }}</td>
-                    <td>{{ formatMbps(series.averageMbps) }}</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div v-if="chartSeries(panel).length" class="traffic-chart">
+              <div class="traffic-chart__stats">
+                <span><TrendingUp :size="14" /> {{ formatMbps(panelPeakMbps(panel)) }}</span>
+                <span><BarChart3 :size="14" /> {{ formatMbps(panelAverageMbps(panel)) }}</span>
+              </div>
+              <svg viewBox="0 0 300 112" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient :id="`area-${result.id}-${panel.panelId}`" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.28" />
+                    <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  v-if="chartSeries(panel)[0]"
+                  :d="chartAreaPath(chartSeries(panel)[0].graphPoints, chartBounds(panel))"
+                  :fill="`url(#area-${result.id}-${panel.panelId})`"
+                />
+                <path
+                  v-for="(series, index) in chartSeries(panel)"
+                  :key="series.name"
+                  :d="chartPath(series.graphPoints, chartBounds(panel))"
+                  :stroke="seriesColors[index % seriesColors.length]"
+                  fill="none"
+                />
+              </svg>
+              <div class="traffic-chart__legend">
+                <span v-for="(series, index) in chartSeries(panel)" :key="series.name">
+                  <i :style="{ background: seriesColors[index % seriesColors.length] }"></i>
+                  {{ series.name }}
+                </span>
+              </div>
+            </div>
+
+            <div v-if="panel.series.length" class="series-stat-grid">
+              <div v-for="series in panel.series" :key="series.name" class="series-stat">
+                <strong>{{ series.name }}</strong>
+                <span><TrendingUp :size="13" /> Peak {{ formatMbps(series.peakMbps) }}</span>
+                <span><TrendingDown :size="13" /> Min {{ formatMbps(series.minimumMbps) }}</span>
+                <span><Clock3 :size="13" /> {{ formatTime(series.peak.time) }}</span>
+              </div>
             </div>
           </article>
         </div>
@@ -354,6 +418,7 @@ onMounted(async () => {
 }
 
 .analyzer-toolbar,
+.settings-panel,
 .link-card,
 .dashboard-result,
 .panel-result,
@@ -503,11 +568,52 @@ onMounted(async () => {
   gap: 0.9rem;
 }
 
+.settings-panel {
+  border-radius: 1.1rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.settings-panel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.2rem;
+  cursor: pointer;
+  padding: 0 1rem;
+  color: #dbeafe;
+  font-weight: 900;
+  list-style: none;
+}
+
+.settings-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-panel summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.settings-panel summary small {
+  color: rgba(211, 226, 255, 0.68);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.settings-panel .link-grid {
+  border-top: 1px solid rgba(83, 130, 214, 0.2);
+  padding: 0.95rem;
+}
+
 .link-card {
   display: grid;
   gap: 0.7rem;
   border-radius: 1.1rem;
   padding: 0.95rem;
+  background: rgba(4, 16, 42, 0.66);
 }
 
 .link-card__head {
@@ -600,7 +706,7 @@ onMounted(async () => {
 }
 
 .result-stack,
-.panel-list {
+.panel-grid {
   display: grid;
   gap: 1rem;
 }
@@ -671,55 +777,118 @@ onMounted(async () => {
   background: rgba(8, 35, 80, 0.72);
 }
 
-.panel-list {
+.panel-grid {
   margin-top: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .panel-result {
+  display: grid;
+  gap: 0.85rem;
   border-radius: 1rem;
   padding: 0.85rem;
 }
 
-.series-table-wrap {
-  margin-top: 0.85rem;
-  overflow-x: auto;
-}
-
-.series-table {
-  width: 100%;
-  min-width: 780px;
-  border-collapse: collapse;
+.traffic-chart {
   overflow: hidden;
-  border-radius: 0.8rem;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 0.9rem;
+  background: rgba(3, 12, 32, 0.62);
 }
 
-.series-table th,
-.series-table td {
-  border-bottom: 1px solid rgba(100, 116, 139, 0.22);
-  padding: 0.75rem;
-  text-align: left;
+.traffic-chart__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.65rem 0.72rem 0;
 }
 
-.series-table th {
-  background: rgba(8, 35, 80, 0.78);
-  color: #c8dcff;
-  font-size: 0.72rem;
+.traffic-chart__stats span,
+.series-stat span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.traffic-chart__stats span {
+  border-radius: 999px;
+  background: rgba(8, 35, 80, 0.86);
+  color: #dbeafe;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.76rem;
   font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+}
+
+.traffic-chart svg {
+  display: block;
+  width: 100%;
+  height: 11rem;
+  margin-top: 0.2rem;
+}
+
+.traffic-chart svg path {
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.traffic-chart svg path:first-of-type {
+  stroke: none;
+}
+
+.traffic-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+  border-top: 1px solid rgba(96, 165, 250, 0.14);
+  padding: 0.6rem 0.72rem;
+}
+
+.traffic-chart__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  max-width: 100%;
+  color: rgba(226, 239, 255, 0.78);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.traffic-chart__legend i {
+  width: 0.58rem;
+  height: 0.58rem;
+  flex: none;
+  border-radius: 999px;
+}
+
+.series-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.series-stat {
+  display: grid;
+  gap: 0.3rem;
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  border-radius: 0.75rem;
+  background: rgba(6, 20, 50, 0.62);
+  padding: 0.65rem;
+  color: #f8fbff;
+}
+
+.series-stat strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.series-table th svg {
-  display: inline-block;
-  margin-right: 0.25rem;
-  vertical-align: -2px;
-}
-
-.series-table td {
-  background: rgba(6, 20, 50, 0.62);
-  color: #f8fbff;
-  font-weight: 750;
+.series-stat span {
+  color: rgba(211, 226, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 @media (max-width: 1100px) {
@@ -733,14 +902,17 @@ onMounted(async () => {
     justify-content: flex-start;
   }
 
-  .summary-strip {
+  .summary-strip,
+  .panel-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
   .link-grid,
-  .summary-strip {
+  .summary-strip,
+  .panel-grid,
+  .series-stat-grid {
     grid-template-columns: 1fr;
   }
 }

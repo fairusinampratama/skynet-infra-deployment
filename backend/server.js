@@ -412,6 +412,15 @@ const createSeriesStats = (name, points) => {
 
   if (!validPoints.length) return null
 
+  const sampleStep = Math.max(Math.ceil(validPoints.length / 90), 1)
+  const sampledPoints = validPoints
+    .filter((_, index) => index % sampleStep === 0)
+    .slice(-90)
+
+  if (sampledPoints.at(-1)?.time !== validPoints.at(-1)?.time) {
+    sampledPoints.push(validPoints.at(-1))
+  }
+
   const peak = validPoints.reduce((best, point) => point.value > best.value ? point : best, validPoints[0])
   const minimum = validPoints.reduce((best, point) => point.value < best.value ? point : best, validPoints[0])
   const average = validPoints.reduce((sum, point) => sum + point.value, 0) / validPoints.length
@@ -425,7 +434,11 @@ const createSeriesStats = (name, points) => {
     unit: 'bps',
     averageMbps: average / 1_000_000,
     peakMbps: peak.value / 1_000_000,
-    minimumMbps: minimum.value / 1_000_000
+    minimumMbps: minimum.value / 1_000_000,
+    graphPoints: sampledPoints.map((point) => ({
+      time: point.time,
+      valueMbps: point.value / 1_000_000
+    }))
   }
 }
 
