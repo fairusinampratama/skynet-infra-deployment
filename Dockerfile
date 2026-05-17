@@ -33,6 +33,7 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV DB_PATH=/app/data/database.sqlite
+ENV GRAFANA_LINKS_PATH=/app/data/grafana-links.json
 ENV NODE_ENV=production
 # Default PIN - should be overridden in production via Coolify environment variables
 ENV ADMIN_PIN=1990

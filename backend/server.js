@@ -19,6 +19,7 @@ const distPath = path.join(__dirname, '../dist')
 const GRAFANA_LINKS_PATH = process.env.GRAFANA_LINKS_PATH || path.join(__dirname, 'grafana-links.json')
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
+fs.mkdirSync(path.dirname(GRAFANA_LINKS_PATH), { recursive: true })
 
 const getSeedCandidatePaths = () =>
   [
