@@ -212,13 +212,19 @@ const relativeTimeToMs = (value, now = Date.now()) => {
   if (typeof value === 'number') return value
   if (/^\d+$/.test(value)) return Number(value)
 
-  const match = String(value).match(/^now-(\d+)([mhdw])$/)
+  const match = String(value).match(/^now-(\d+)([mhdwM])$/)
   if (!match) {
     const parsed = Date.parse(value)
     return Number.isNaN(parsed) ? now : parsed
   }
 
   const amount = Number(match[1])
+  if (match[2] === 'M') {
+    const date = new Date(now)
+    date.setUTCMonth(date.getUTCMonth() - amount)
+    return date.getTime()
+  }
+
   const units = {
     m: 60 * 1000,
     h: 60 * 60 * 1000,

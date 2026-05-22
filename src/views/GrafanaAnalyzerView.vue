@@ -42,10 +42,15 @@ const rangeOptions = [
   { label: '6 Jam', value: 'now-6h' },
   { label: '12 Jam', value: 'now-12h' },
   { label: '24 Jam', value: 'now-24h' },
-  { label: '7 Hari', value: 'now-7d' }
+  { label: '7 Hari', value: 'now-7d' },
+  { label: '1 Bulan', value: 'now-1M' },
+  { label: '2 Bulan', value: 'now-2M' }
 ]
 
 const filledLinks = computed(() => links.value.filter((link) => link.url.trim() || link.dashboardJson?.trim()))
+const selectedRangeLabel = computed(() =>
+  rangeOptions.find((option) => option.value === selectedRange.value)?.label || selectedRange.value.replace('now-', '')
+)
 const analyzedPanels = computed(() =>
   (analysis.value?.results || []).reduce((total, result) => total + (result.panels?.length || 0), 0)
 )
@@ -364,7 +369,7 @@ onMounted(async () => {
       </div>
       <div>
         <span>Rentang</span>
-        <strong>{{ selectedRange.replace('now-', '') }}</strong>
+        <strong>{{ selectedRangeLabel }}</strong>
       </div>
     </section>
 
