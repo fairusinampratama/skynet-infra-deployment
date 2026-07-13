@@ -59,7 +59,7 @@ Copy the example environment file and customize:
 cp .env.example .env
 ```
 Key configuration:
-- `ADMIN_PIN`: Set your desired 4-digit PIN for CRUD access (default: `1234`)
+- `ADMIN_PIN`: Set a private PIN for CRUD access. Do not commit real PIN values.
 
 ### 3. Start the Frontend Vite Server
 In a second terminal, start the Vue development server:
@@ -68,7 +68,7 @@ npm run dev
 ```
 The frontend will run on `http://localhost:5173` and automatically proxy API requests to the backend.
 
-**Note**: The default admin PIN is `1234`. You can change it by setting the `ADMIN_PIN` environment variable.
+**Note**: Keep admin PINs, deployment `.env` files, generated spreadsheets, and SQLite databases outside Git.
 
 ---
 
@@ -86,7 +86,7 @@ This application is fully containerized and optimized for deployment via [Coolif
 3. **Configure Settings**:
    - **Build Pack**: Coolify will auto-detect the `Dockerfile`.
    - **Port**: Ensure the internal port is set to `3000`.
-   - **Environment Variables**: Set `ADMIN_PIN` to your desired 4-digit PIN (e.g., `ADMIN_PIN=9876`).
+   - **Environment Variables**: Set `ADMIN_PIN` to a private value in the deployment environment.
 4. **Configure Persistent Storage (CRITICAL)**:
    - To ensure your SQLite database isn't erased during updates or container restarts, you must mount a persistent volume.
    - Go to the **Storages** (or Volumes) tab for your application in Coolify.
@@ -110,4 +110,8 @@ MARIADB_USER=skynet
 MARIADB_PASSWORD=your-secure-password
 ```
 
-When MariaDB is empty, the app will try to import existing SQLite rows from `DB_PATH`, `LEGACY_DB_PATH`, `/app/server/database.sqlite`, or the bundled backend database.
+When MariaDB is empty, import existing SQLite rows only from approved private storage. Do not commit production SQLite databases or exported spreadsheets to this repository.
+
+## Data Handling
+
+Real deployment `.env` files, SQLite databases, installation progress spreadsheets, generated exports, and operational logs are intentionally excluded from this repository. Use anonymized fixtures for public examples and keep live project data in approved private storage only.
